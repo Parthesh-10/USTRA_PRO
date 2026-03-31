@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 7%;
+    --foreground: 220 15% 90%;
+
+    --card: 220 18% 11%;
+    --card-foreground: 220 15% 90%;
+
+    --popover: 220 18% 11%;
+    --popover-foreground: 220 15% 90%;
+
+    --primary: 32 95% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 16%;
+    --secondary-foreground: 220 15% 85%;
+
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 32 50% 15%;
+    --accent-foreground: 32 95% 65%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 32 95% 50%;
+
+    --radius: 0.75rem;
+
+    --salon-green: 152 60% 42%;
+    --salon-green-foreground: 0 0% 100%;
+    --salon-gold: 45 90% 55%;
+    --salon-surface: 220 18% 9%;
+
+    --glow-primary: 32 95% 50%;
+    --glow-green: 152 60% 42%;
+
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 32 95% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 15% 15%;
+    --sidebar-ring: 32 95% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(32 95% 50%), hsl(20 90% 45%));
+  }
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(220 20% 5%) 0%, hsl(220 18% 10%) 100%);
+  }
+  .shadow-card {
+    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.3), 0 4px 12px hsl(0 0% 0% / 0.2);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.4), 0 8px 24px hsl(32 95% 50% / 0.08);
+  }
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(32 95% 50% / 0.15), 0 0 60px hsl(32 95% 50% / 0.05);
+  }
+  .glow-text {
+    text-shadow: 0 0 40px hsl(32 95% 50% / 0.3);
+  }
+  .glass {
+    background: hsl(220 18% 11% / 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(220 15% 20% / 0.5);
+  }
+}
+
+@keyframes hero-slide {
+  0%, 28% { opacity: 1; }
+  33%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.hero-slide-0 { animation: hero-slide 15s infinite 0s; }
+.hero-slide-1 { animation: hero-slide 15s infinite 5s; }
+.hero-slide-2 { animation: hero-slide 15s infinite 10s; }
