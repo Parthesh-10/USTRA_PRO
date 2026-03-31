@@ -13,8 +13,8 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './context/ProtectedRoute'
-import Login from "./pages/login";
-import Signup from "./pages/signUp";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 
 const queryClient = new QueryClient();
