@@ -15,6 +15,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './context/ProtectedRoute'
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AdminDashboard from "./pages/AdminDashboard";
 
 
 const queryClient = new QueryClient();
@@ -65,11 +66,21 @@ const App = () => (
 
 
   <Route path="*" element={<NotFound />} />
+
+
+  <Route path="/admin" element={
+  <ProtectedRoute allowedRoles={['admin']}>
+    <AdminDashboard />
+  </ProtectedRoute>
+} />
+
 </Routes>
       </BrowserRouter>
     </TooltipProvider>
       </AuthProvider>          
   </QueryClientProvider>
+
+  
 );
 
 export default App;
