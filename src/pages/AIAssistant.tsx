@@ -12,15 +12,26 @@ interface Message {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-const SYSTEM_PROMPT = `You are an expert AI Style Assistant for USTRA PRO, a premium salon booking platform in India. 
+const SYSTEM_PROMPT = `You are an expert AI Style Assistant for USTRA PRO, a premium salon booking platform in India.
 Your job is to give personalized grooming, hairstyle, and beard style recommendations.
-When analyzing a photo, identify:
-1. Face shape (oval, round, square, heart, diamond, oblong)
-2. Current hair type and texture
-3. Current style
-Then suggest 2-3 specific hairstyles that would suit them best.
-Keep responses concise, friendly, and practical. Use Indian context (prices in ₹, Indian hair types, local trends).
-Format responses clearly with emojis for better readability. Keep each response under 250 words.`;
+
+RESPONSE RULES:
+- Always give COMPLETE responses, never cut off mid-sentence
+- Use plain text only, NO markdown, NO asterisks, NO bold formatting
+- Use emojis naturally to separate points
+- Structure responses clearly with line breaks
+- Keep responses between 150-250 words
+- Always end with a complete sentence
+
+When suggesting styles always mention:
+💈 Style name and description
+✨ Why it suits them
+💰 Approximate cost in Indian salons in rupees
+🛠 Quick maintenance tip
+
+When analyzing a photo, identify face shape, hair type, and current style.
+Use Indian context, Indian hair types, local trends, prices in rupees.
+Always give warm, encouraging, practical advice.`;
 
 async function callGemini(messages: Message[], userMessage: string, imageBase64?: string): Promise<string> {
   const conversationHistory = messages.map(m => ({
@@ -28,10 +39,8 @@ async function callGemini(messages: Message[], userMessage: string, imageBase64?
     parts: [{ text: m.content }]
   }));
 
-  // Build current message parts
   const currentParts: any[] = [];
-  
-  // Add image if provided
+
   if (imageBase64) {
     currentParts.push({
       inline_data: {
@@ -40,7 +49,7 @@ async function callGemini(messages: Message[], userMessage: string, imageBase64?
       }
     });
   }
-  
+
   currentParts.push({ text: userMessage });
 
   const response = await fetch(
@@ -56,7 +65,7 @@ async function callGemini(messages: Message[], userMessage: string, imageBase64?
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 400,
+          maxOutputTokens: 800,
         }
       })
     }
@@ -64,12 +73,22 @@ async function callGemini(messages: Message[], userMessage: string, imageBase64?
 
   if (!response.ok) throw new Error("Gemini API error");
   const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response. Please try again.";
+
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
+    || "Sorry, I could not generate a response. Please try again.";
+
+  const cleanText = rawText
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6} /g, '')
+    .replace(/`(.*?)`/g, '$1')
+
+  return cleanText;
 }
 
 const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", content: "Hi! I'm your AI Style Assistant powered by Gemini ✨\n\nUpload your photo and I'll analyze your face shape and suggest the perfect hairstyle! Or just ask me anything about grooming 💈" },
+    { role: "ai", content: "Hi! I am your AI Style Assistant powered by Gemini ✨\n\nUpload your photo and I will analyze your face shape and suggest the perfect hairstyle! Or just ask me anything about grooming 💈" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,14 +108,10 @@ const AIAssistant = () => {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Show preview
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setSelectedImage(result);
-      
-      // Extract base64 (remove data:image/jpeg;base64, prefix)
       const base64 = result.split(",")[1];
       setImageBase64(base64);
     };
@@ -116,7 +131,6 @@ const AIAssistant = () => {
 
     const finalMessage = messageToSend || "Please analyze my photo and suggest the best hairstyles for me.";
 
-    // Add user message with image preview
     const userMessage: Message = {
       role: "user",
       content: finalMessage,
@@ -135,7 +149,7 @@ const AIAssistant = () => {
     } catch (error) {
       setMessages(prev => [...prev, {
         role: "ai",
-        content: "Sorry, I'm having trouble connecting right now. Please check your internet and try again! 🙏"
+        content: "Sorry, I am having trouble connecting right now. Please check your internet and try again! 🙏"
       }]);
     } finally {
       setLoading(false);
@@ -146,7 +160,7 @@ const AIAssistant = () => {
     if (!faceShape && !hairType && !occasion && !budget) return;
     const prompt = `Give me personalized grooming suggestions for:
 - Face Shape: ${faceShape || "Not specified"}
-- Hair Type: ${hairType || "Not specified"}  
+- Hair Type: ${hairType || "Not specified"}
 - Occasion: ${occasion || "Not specified"}
 - Budget: ${budget || "Not specified"}
 
@@ -193,7 +207,6 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-foreground"
               }`}>
-                {/* Show image if present */}
                 {msg.image && (
                   <img
                     src={msg.image}
@@ -257,7 +270,6 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
 
         {/* Chat Input */}
         <div className="flex gap-2 mb-8">
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -265,8 +277,6 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
             className="hidden"
             onChange={handleImageSelect}
           />
-
-          {/* Camera button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
@@ -278,7 +288,6 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
           >
             <Camera className="w-5 h-5" />
           </button>
-
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -338,3 +347,4 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
 };
 
 export default AIAssistant;
+
