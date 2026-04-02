@@ -194,7 +194,7 @@ Suggest 2-3 specific hairstyles or grooming looks that would work best.`;
         </div>
 
         {/* Chat Window */}
-        <div className="bg-card rounded-xl shadow-card p-4 mb-4 h-72 overflow-y-auto space-y-3">
+        <div className="bg-card rounded-xl shadow-card p-4 mb-4 h-[500px] overflow-y-auto space-y-3">
           {messages.map((msg, i) => (
             <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : ""}`}>
               {msg.role === "ai" && (
