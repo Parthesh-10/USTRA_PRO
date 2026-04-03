@@ -73,22 +73,37 @@ const OwnerDashboard = () => {
     setLoading(false);
   }
 
-  async function handleAddBarber() {
-    if (!salon || !newBarber.name) return;
-    const { error } = await supabase.from("barbers").insert({
-      salon_id: salon.id,
-      name: newBarber.name,
-      experience: parseInt(newBarber.experience) || 0,
-      specialties: newBarber.specialties.split(",").map(s => s.trim()).filter(Boolean),
-      bio: newBarber.bio,
-      is_active: true,
-    });
-    if (!error) {
-      setShowAddBarber(false);
-      setNewBarber({ name: "", experience: "", specialties: "", bio: "" });
-      fetchOwnerData();
-    }
+async function handleAddBarber() {
+  if (!salon || !newBarber.name) {
+    alert("Please enter a barber name");
+    return;
   }
+
+  console.log("Adding barber to salon:", salon.id);
+  console.log("Barber data:", newBarber);
+
+  const { data, error } = await supabase.from("barbers").insert({
+    salon_id: salon.id,
+    name: newBarber.name,
+    experience: parseInt(newBarber.experience) || 0,
+    specialties: newBarber.specialties
+      ? newBarber.specialties.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : [],
+    bio: newBarber.bio,
+    is_active: true,
+  }).select();
+
+  console.log("Result:", data, error);
+
+  if (error) {
+    alert("Error adding barber: " + error.message);
+  } else {
+    setShowAddBarber(false);
+    setNewBarber({ name: "", experience: "", specialties: "", bio: "" });
+    fetchOwnerData();
+    alert("Barber added successfully!");
+  }
+}
 
   async function handleRemoveBarber(id: string) {
     await supabase.from("barbers").update({ is_active: false }).eq("id", id);
