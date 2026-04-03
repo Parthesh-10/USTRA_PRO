@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
-import { Users, Store, CalendarDays, BarChart3, Check, X, Shield, TrendingUp, DollarSign, Eye } from "lucide-react";
+import { Users, Store, CalendarDays, BarChart3, Check, X, Shield, TrendingUp, DollarSign, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
- 
+
 const navItems = [
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "salons", label: "Salons", icon: Store },
   { id: "users", label: "Users", icon: Users },
   { id: "bookings", label: "Bookings", icon: CalendarDays },
 ];
- 
+
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -21,13 +21,16 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
- 
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "admin") { navigate("/"); return; }
     fetchAllData();
   }, [user]);
- 
+
   async function fetchAllData() {
     setLoading(true);
     const [salonsRes, usersRes, bookingsRes] = await Promise.all([
@@ -40,29 +43,81 @@ const AdminDashboard = () => {
     setBookings(bookingsRes.data || []);
     setLoading(false);
   }
- 
+
+  function showSuccess(msg: string) {
+    setSuccess(msg);
+    setTimeout(() => setSuccess(""), 3000);
+  }
+
+  function showError(msg: string) {
+    setError(msg);
+    setTimeout(() => setError(""), 4000);
+  }
+
   async function handleApproveSalon(id: string) {
-    await supabase.from("salons").update({ is_verified: true }).eq("id", id);
+    setActionLoading(id);
+    const { error } = await supabase
+      .from("salons")
+      .update({ is_verified: true })
+      .eq("id", id);
+    if (error) showError("Failed to approve salon: " + error.message);
+    else showSuccess("Salon approved successfully!");
+    setActionLoading(null);
     fetchAllData();
   }
- 
-  async function handleRejectSalon(id: string) {
-    await supabase.from("salons").delete().eq("id", id);
+
+  async function handleRemoveSalon(id: string) {
+    if (!confirm("Are you sure you want to remove this salon? This will delete all associated barbers, services and bookings.")) return;
+    setActionLoading(id);
+
+    // Delete in correct order due to foreign keys
+    await supabase.from("tips").delete().eq("booking_id", id);
+    await supabase.from("payments").delete().in("booking_id",
+      (await supabase.from("bookings").select("id").eq("salon_id", id)).data?.map(b => b.id) || []
+    );
+    await supabase.from("reviews").delete().eq("salon_id", id);
+    await supabase.from("bookings").delete().eq("salon_id", id);
+    await supabase.from("services").delete().eq("salon_id", id);
+    await supabase.from("barbers").delete().eq("salon_id", id);
+    const { error } = await supabase.from("salons").delete().eq("id", id);
+
+    if (error) showError("Failed to remove salon: " + error.message);
+    else showSuccess("Salon removed successfully!");
+    setActionLoading(null);
     fetchAllData();
   }
- 
+
   async function handleUpdateUserRole(id: string, role: string) {
-    await supabase.from("users").update({ role }).eq("id", id);
+    const { error } = await supabase.from("users").update({ role }).eq("id", id);
+    if (error) showError("Failed to update role: " + error.message);
+    else showSuccess("User role updated!");
     fetchAllData();
   }
- 
+
+  async function handleDeleteUser(id: string) {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    setActionLoading(id);
+    const { error } = await supabase.from("users").delete().eq("id", id);
+    if (error) showError("Failed to delete user: " + error.message);
+    else showSuccess("User deleted!");
+    setActionLoading(null);
+    fetchAllData();
+  }
+
+  async function handleUpdateBookingStatus(id: string, status: string) {
+    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+    if (error) showError("Failed to update booking: " + error.message);
+    else showSuccess("Booking updated!");
+    fetchAllData();
+  }
+
   // Stats
   const totalRevenue = bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const pendingSalons = salons.filter(s => !s.is_verified).length;
   const verifiedSalons = salons.filter(s => s.is_verified).length;
   const totalBookings = bookings.length;
   const completedBookings = bookings.filter(b => b.status === "completed").length;
- 
+
   if (loading) return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -71,12 +126,24 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
- 
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      {/* Global notifications */}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
+          <Check className="w-4 h-4" /> {success}
+        </div>
+      )}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-destructive text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
+          <X className="w-4 h-4" /> {error}
+        </div>
+      )}
+
       <div className="flex">
- 
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
           <div className="mb-4 px-2 flex items-center gap-2">
@@ -85,7 +152,7 @@ const AdminDashboard = () => {
           </div>
           {pendingSalons > 0 && (
             <div className="mb-3 mx-2 px-3 py-2 bg-amber-500/10 rounded-lg">
-              <p className="text-xs text-amber-500 font-medium">⏳ {pendingSalons} salon{pendingSalons > 1 ? "s" : ""} pending approval</p>
+              <p className="text-xs text-amber-500 font-medium">⏳ {pendingSalons} salon{pendingSalons > 1 ? "s" : ""} pending</p>
             </div>
           )}
           <nav className="space-y-1">
@@ -108,7 +175,7 @@ const AdminDashboard = () => {
             ))}
           </nav>
         </aside>
- 
+
         {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-40">
           {navItems.map((item) => (
@@ -124,9 +191,9 @@ const AdminDashboard = () => {
             </button>
           ))}
         </div>
- 
+
         <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
- 
+
           {/* Overview */}
           {activeSection === "overview" && (
             <div className="animate-fade-in">
@@ -147,7 +214,7 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
- 
+
               {/* Pending approvals */}
               {pendingSalons > 0 && (
                 <div className="mb-6">
@@ -165,13 +232,24 @@ const AdminDashboard = () => {
                             <p className="text-xs text-muted-foreground">Owner: {s.users?.name} ({s.users?.email})</p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
-                              onClick={() => handleApproveSalon(s.id)}>
-                              <Check className="w-3 h-3 mr-1" /> Approve
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
+                              disabled={actionLoading === s.id}
+                              onClick={() => handleApproveSalon(s.id)}
+                            >
+                              <Check className="w-3 h-3 mr-1" />
+                              {actionLoading === s.id ? "..." : "Approve"}
                             </Button>
-                            <Button size="sm" variant="outline" className="text-destructive border-destructive/30 text-xs"
-                              onClick={() => handleRejectSalon(s.id)}>
-                              <X className="w-3 h-3 mr-1" /> Reject
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive border-destructive/30 text-xs"
+                              disabled={actionLoading === s.id}
+                              onClick={() => handleRemoveSalon(s.id)}
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              {actionLoading === s.id ? "..." : "Reject"}
                             </Button>
                           </div>
                         </div>
@@ -180,7 +258,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
- 
+
               {/* Recent bookings */}
               <h3 className="text-sm font-semibold text-foreground mb-3">Recent Bookings</h3>
               <div className="space-y-2">
@@ -204,7 +282,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
- 
+
           {/* Salons */}
           {activeSection === "salons" && (
             <div className="animate-fade-in">
@@ -227,28 +305,41 @@ const AdminDashboard = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">{s.address}, {s.city}, {s.state}</p>
                         <p className="text-xs text-muted-foreground">Owner: {s.users?.name} ({s.users?.email})</p>
+                        <p className="text-xs text-muted-foreground">Rating: {s.rating || 0} ⭐ • {s.total_reviews || 0} reviews</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
                         {!s.is_verified && (
-                          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
-                            onClick={() => handleApproveSalon(s.id)}>
-                            <Check className="w-3 h-3 mr-1" /> Approve
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
+                            disabled={actionLoading === s.id}
+                            onClick={() => handleApproveSalon(s.id)}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            {actionLoading === s.id ? "..." : "Approve"}
                           </Button>
                         )}
-                        {s.is_verified && (
-                          <Button size="sm" variant="outline" className="text-destructive border-destructive/30 text-xs"
-                            onClick={() => handleRejectSalon(s.id)}>
-                            <X className="w-3 h-3 mr-1" /> Remove
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/30 text-xs"
+                          disabled={actionLoading === s.id}
+                          onClick={() => handleRemoveSalon(s.id)}
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          {actionLoading === s.id ? "Removing..." : "Remove"}
+                        </Button>
                       </div>
                     </div>
                   </div>
                 ))}
+                {salons.length === 0 && (
+                  <p className="text-muted-foreground text-sm text-center py-8">No salons yet.</p>
+                )}
               </div>
             </div>
           )}
- 
+
           {/* Users */}
           {activeSection === "users" && (
             <div className="animate-fade-in">
@@ -267,6 +358,7 @@ const AdminDashboard = () => {
                         <p className="font-medium text-foreground text-sm">{u.name || "No name"}</p>
                         <p className="text-xs text-muted-foreground">{u.email}</p>
                         {u.phone && <p className="text-xs text-muted-foreground">{u.phone}</p>}
+                        <p className="text-xs text-muted-foreground">Joined: {new Date(u.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -279,13 +371,24 @@ const AdminDashboard = () => {
                         <option value="owner">Owner</option>
                         <option value="admin">Admin</option>
                       </select>
+                      {u.id !== user?.id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/30 text-xs"
+                          disabled={actionLoading === u.id}
+                          onClick={() => handleDeleteUser(u.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
- 
+
           {/* Bookings */}
           {activeSection === "bookings" && (
             <div className="animate-fade-in">
@@ -314,27 +417,40 @@ const AdminDashboard = () => {
                         <p className="text-xs text-muted-foreground">
                           {b.services?.name} • {b.barbers?.name} • {b.booking_date} at {b.booking_time?.slice(0, 5)}
                         </p>
+                        <p className="text-xs text-muted-foreground">Payment: {b.payment_status}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-1">
                         <p className="font-semibold text-foreground">₹{b.total_amount}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                          b.status === "pending" ? "bg-amber-500/10 text-amber-500" :
-                          b.status === "confirmed" ? "bg-blue-500/10 text-blue-500" :
-                          b.status === "completed" ? "bg-green-500/10 text-green-500" :
-                          "bg-destructive/10 text-destructive"
-                        }`}>{b.status}</span>
+                        <select
+                          value={b.status}
+                          onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value)}
+                          className={`text-xs border rounded px-2 py-1 bg-background focus:outline-none ${
+                            b.status === "pending" ? "text-amber-500" :
+                            b.status === "confirmed" ? "text-blue-500" :
+                            b.status === "completed" ? "text-green-500" :
+                            "text-destructive"
+                          }`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
                       </div>
                     </div>
                   </div>
                 ))}
+                {bookings.length === 0 && (
+                  <p className="text-muted-foreground text-sm text-center py-8">No bookings yet.</p>
+                )}
               </div>
             </div>
           )}
- 
+
         </main>
       </div>
     </div>
   );
 };
- 
+
 export default AdminDashboard;
