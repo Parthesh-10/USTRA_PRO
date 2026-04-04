@@ -5,23 +5,22 @@ import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+ 
 const navItems = [
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "barbers", label: "Barbers", icon: Users },
   { id: "services", label: "Services", icon: Scissors },
   { id: "earnings", label: "Earnings", icon: BarChart3 },
 ];
-
+ 
 const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
   <div
-    className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+    className="fixed inset-0 z-[999] flex items-start justify-center p-4 pt-20 overflow-y-auto"
     style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
     onClick={onClose}
   >
     <div
-      className="bg-card rounded-xl w-full max-w-md p-6 space-y-4"
-      style={{ maxHeight: '90vh', overflowY: 'auto' }}
+      className="bg-card rounded-xl w-full max-w-md p-6 space-y-4 mb-8"
       onClick={e => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
@@ -34,7 +33,7 @@ const Modal = ({ title, onClose, children }: { title: string; onClose: () => voi
     </div>
   </div>
 );
-
+ 
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,32 +45,32 @@ const OwnerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
-
+ 
   const [showAddBarber, setShowAddBarber] = useState(false);
   const [newBarber, setNewBarber] = useState({ name: "", experience: "", specialties: "", bio: "" });
-
+ 
   const [showAddService, setShowAddService] = useState(false);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
-
+ 
   const [showAddSalon, setShowAddSalon] = useState(false);
   const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
-
+ 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "owner" && user.role !== "admin") { navigate("/"); return; }
     fetchOwnerData();
   }, [user]);
-
+ 
   function showSuccess(msg: string) {
     setActionSuccess(msg);
     setTimeout(() => setActionSuccess(""), 3000);
   }
-
+ 
   function showError(msg: string) {
     setActionError(msg);
     setTimeout(() => setActionError(""), 4000);
   }
-
+ 
   async function fetchOwnerData() {
     setLoading(true);
     const { data: salonData } = await supabase
@@ -79,7 +78,7 @@ const OwnerDashboard = () => {
       .select("*")
       .eq("owner_id", user?.id)
       .single();
-
+ 
     if (salonData) {
       setSalon(salonData);
       const [barbersRes, servicesRes, bookingsRes] = await Promise.all([
@@ -97,7 +96,7 @@ const OwnerDashboard = () => {
     }
     setLoading(false);
   }
-
+ 
   async function handleAddBarber() {
     if (!salon || !newBarber.name) { showError("Please enter a barber name"); return; }
     const { error } = await supabase.from("barbers").insert({
@@ -116,13 +115,13 @@ const OwnerDashboard = () => {
       fetchOwnerData();
     }
   }
-
+ 
   async function handleRemoveBarber(id: string) {
-    const { error } = await supabase.from("barbers").update({ is_active: false }).eq("id", id);
+    const { error } = await supabase.from("barbers").delete().eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Barber removed!"); fetchOwnerData(); }
   }
-
+ 
   async function handleAddService() {
     if (!salon || !newService.name || !newService.price) { showError("Please fill required fields"); return; }
     const { error } = await supabase.from("services").insert({
@@ -140,19 +139,19 @@ const OwnerDashboard = () => {
       fetchOwnerData();
     }
   }
-
+ 
   async function handleRemoveService(id: string) {
-    const { error } = await supabase.from("services").update({ is_active: false }).eq("id", id);
+    const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Service removed!"); fetchOwnerData(); }
   }
-
+ 
   async function handleUpdateBookingStatus(id: string, status: string) {
     const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Booking updated!"); fetchOwnerData(); }
   }
-
+ 
   async function handleCreateSalon() {
     if (!newSalon.name) { showError("Please enter salon name"); return; }
     const { error } = await supabase.from("salons").insert({
@@ -165,9 +164,9 @@ const OwnerDashboard = () => {
       is_verified: false,
     });
     if (error) showError("Error: " + error.message);
-    else { setShowAddSalon(false); showSuccess("Salon created!"); fetchOwnerData(); }
+    else { setShowAddSalon(false); showSuccess("Salon created! Pending admin approval."); fetchOwnerData(); }
   }
-
+ 
   const totalEarnings = bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const todayEarnings = bookings.filter(b => {
     const today = new Date().toISOString().split("T")[0];
@@ -175,7 +174,7 @@ const OwnerDashboard = () => {
   }).reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const pendingBookings = bookings.filter(b => b.status === "pending").length;
   const completedBookings = bookings.filter(b => b.status === "completed").length;
-
+ 
   if (loading) return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -184,7 +183,7 @@ const OwnerDashboard = () => {
       </div>
     </div>
   );
-
+ 
   if (!salon) return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -196,7 +195,7 @@ const OwnerDashboard = () => {
           <Plus className="w-4 h-4 mr-2" /> Create My Salon
         </Button>
       </div>
-
+ 
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
           {[
@@ -223,23 +222,23 @@ const OwnerDashboard = () => {
       )}
     </div>
   );
-
+ 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
-      {/* Notifications */}
+ 
+      {/* Toast Notifications */}
       {actionSuccess && (
-        <div className="fixed top-4 right-4 z-[998] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+        <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
           <Check className="w-4 h-4" /> {actionSuccess}
         </div>
       )}
       {actionError && (
-        <div className="fixed top-4 right-4 z-[998] bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+        <div className="fixed top-4 right-4 z-[9999] bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
           <X className="w-4 h-4" /> {actionError}
         </div>
       )}
-
+ 
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
@@ -262,11 +261,16 @@ const OwnerDashboard = () => {
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
+                {item.id === "bookings" && pendingBookings > 0 && (
+                  <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                    {pendingBookings}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
         </aside>
-
+ 
         {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-40">
           {navItems.map((item) => (
@@ -282,9 +286,9 @@ const OwnerDashboard = () => {
             </button>
           ))}
         </div>
-
+ 
         <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
-
+ 
           {/* Bookings */}
           {activeSection === "bookings" && (
             <div className="animate-fade-in">
@@ -297,7 +301,10 @@ const OwnerDashboard = () => {
                 )}
               </h2>
               {bookings.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No bookings yet.</p>
+                <div className="text-center py-12">
+                  <CalendarDays className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No bookings yet.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {bookings.map((b) => (
@@ -344,7 +351,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
-
+ 
           {/* Barbers */}
           {activeSection === "barbers" && (
             <div className="animate-fade-in">
@@ -356,7 +363,10 @@ const OwnerDashboard = () => {
                 </Button>
               </div>
               {barbers.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No barbers yet. Add your first barber!</p>
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No barbers yet. Add your first barber!</p>
+                </div>
               ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {barbers.map((b) => (
@@ -392,7 +402,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
-
+ 
           {/* Services */}
           {activeSection === "services" && (
             <div className="animate-fade-in">
@@ -404,7 +414,10 @@ const OwnerDashboard = () => {
                 </Button>
               </div>
               {services.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No services yet. Add your first service!</p>
+                <div className="text-center py-12">
+                  <Scissors className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No services yet. Add your first service!</p>
+                </div>
               ) : (
                 <div className="grid gap-3">
                   {services.map((s) => (
@@ -426,7 +439,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
-
+ 
           {/* Earnings */}
           {activeSection === "earnings" && (
             <div className="animate-fade-in">
@@ -466,8 +479,8 @@ const OwnerDashboard = () => {
           )}
         </main>
       </div>
-
-      {/* ALL MODALS — outside all containers */}
+ 
+      {/* MODALS */}
       {showAddBarber && (
         <Modal title="Add Barber" onClose={() => setShowAddBarber(false)}>
           {[
@@ -491,7 +504,7 @@ const OwnerDashboard = () => {
           </Button>
         </Modal>
       )}
-
+ 
       {showAddService && (
         <Modal title="Add Service" onClose={() => setShowAddService(false)}>
           {[
@@ -515,7 +528,7 @@ const OwnerDashboard = () => {
           </Button>
         </Modal>
       )}
-
+ 
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
           {[
@@ -543,5 +556,5 @@ const OwnerDashboard = () => {
     </div>
   );
 };
-
+ 
 export default OwnerDashboard;
