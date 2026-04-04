@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, CalendarDays, BarChart3, Clock, Plus, TrendingUp, DollarSign, Scissors, X, Check } from "lucide-react";
+import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +13,28 @@ const navItems = [
   { id: "earnings", label: "Earnings", icon: BarChart3 },
 ];
 
+const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
+  <div
+    className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+    style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+    onClick={onClose}
+  >
+    <div
+      className="bg-card rounded-xl w-full max-w-md p-6 space-y-4"
+      style={{ maxHeight: '90vh', overflowY: 'auto' }}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-foreground text-lg">{title}</h3>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,16 +44,15 @@ const OwnerDashboard = () => {
   const [services, setServices] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
-  // Add barber form
   const [showAddBarber, setShowAddBarber] = useState(false);
   const [newBarber, setNewBarber] = useState({ name: "", experience: "", specialties: "", bio: "" });
 
-  // Add service form
   const [showAddService, setShowAddService] = useState(false);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
 
-  // Add salon form
   const [showAddSalon, setShowAddSalon] = useState(false);
   const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
 
@@ -41,10 +62,18 @@ const OwnerDashboard = () => {
     fetchOwnerData();
   }, [user]);
 
+  function showSuccess(msg: string) {
+    setActionSuccess(msg);
+    setTimeout(() => setActionSuccess(""), 3000);
+  }
+
+  function showError(msg: string) {
+    setActionError(msg);
+    setTimeout(() => setActionError(""), 4000);
+  }
+
   async function fetchOwnerData() {
     setLoading(true);
-
-    // Get owner's salon
     const { data: salonData } = await supabase
       .from("salons")
       .select("*")
@@ -53,8 +82,6 @@ const OwnerDashboard = () => {
 
     if (salonData) {
       setSalon(salonData);
-
-      // Fetch barbers, services, bookings in parallel
       const [barbersRes, servicesRes, bookingsRes] = await Promise.all([
         supabase.from("barbers").select("*").eq("salon_id", salonData.id),
         supabase.from("services").select("*").eq("salon_id", salonData.id),
@@ -64,54 +91,40 @@ const OwnerDashboard = () => {
           .order("booking_date", { ascending: false })
           .limit(50),
       ]);
-
       setBarbers(barbersRes.data || []);
       setServices(servicesRes.data || []);
       setBookings(bookingsRes.data || []);
     }
-
     setLoading(false);
   }
 
-async function handleAddBarber() {
-  if (!salon || !newBarber.name) {
-    alert("Please enter a barber name");
-    return;
+  async function handleAddBarber() {
+    if (!salon || !newBarber.name) { showError("Please enter a barber name"); return; }
+    const { error } = await supabase.from("barbers").insert({
+      salon_id: salon.id,
+      name: newBarber.name,
+      experience: parseInt(newBarber.experience) || 0,
+      specialties: newBarber.specialties ? newBarber.specialties.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+      bio: newBarber.bio,
+      is_active: true,
+    });
+    if (error) showError("Error: " + error.message);
+    else {
+      setShowAddBarber(false);
+      setNewBarber({ name: "", experience: "", specialties: "", bio: "" });
+      showSuccess("Barber added!");
+      fetchOwnerData();
+    }
   }
-
-  console.log("Adding barber to salon:", salon.id);
-  console.log("Barber data:", newBarber);
-
-  const { data, error } = await supabase.from("barbers").insert({
-    salon_id: salon.id,
-    name: newBarber.name,
-    experience: parseInt(newBarber.experience) || 0,
-    specialties: newBarber.specialties
-      ? newBarber.specialties.split(",").map((s: string) => s.trim()).filter(Boolean)
-      : [],
-    bio: newBarber.bio,
-    is_active: true,
-  }).select();
-
-  console.log("Result:", data, error);
-
-  if (error) {
-    alert("Error adding barber: " + error.message);
-  } else {
-    setShowAddBarber(false);
-    setNewBarber({ name: "", experience: "", specialties: "", bio: "" });
-    fetchOwnerData();
-    alert("Barber added successfully!");
-  }
-}
 
   async function handleRemoveBarber(id: string) {
-    await supabase.from("barbers").update({ is_active: false }).eq("id", id);
-    fetchOwnerData();
+    const { error } = await supabase.from("barbers").update({ is_active: false }).eq("id", id);
+    if (error) showError("Error: " + error.message);
+    else { showSuccess("Barber removed!"); fetchOwnerData(); }
   }
 
   async function handleAddService() {
-    if (!salon || !newService.name || !newService.price) return;
+    if (!salon || !newService.name || !newService.price) { showError("Please fill required fields"); return; }
     const { error } = await supabase.from("services").insert({
       salon_id: salon.id,
       name: newService.name,
@@ -119,25 +132,29 @@ async function handleAddBarber() {
       duration: parseInt(newService.duration) || 30,
       is_active: true,
     });
-    if (!error) {
+    if (error) showError("Error: " + error.message);
+    else {
       setShowAddService(false);
       setNewService({ name: "", price: "", duration: "" });
+      showSuccess("Service added!");
       fetchOwnerData();
     }
   }
 
   async function handleRemoveService(id: string) {
-    await supabase.from("services").update({ is_active: false }).eq("id", id);
-    fetchOwnerData();
+    const { error } = await supabase.from("services").update({ is_active: false }).eq("id", id);
+    if (error) showError("Error: " + error.message);
+    else { showSuccess("Service removed!"); fetchOwnerData(); }
   }
 
   async function handleUpdateBookingStatus(id: string, status: string) {
-    await supabase.from("bookings").update({ status }).eq("id", id);
-    fetchOwnerData();
+    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+    if (error) showError("Error: " + error.message);
+    else { showSuccess("Booking updated!"); fetchOwnerData(); }
   }
 
   async function handleCreateSalon() {
-    if (!newSalon.name) return;
+    if (!newSalon.name) { showError("Please enter salon name"); return; }
     const { error } = await supabase.from("salons").insert({
       owner_id: user?.id,
       name: newSalon.name,
@@ -147,13 +164,10 @@ async function handleAddBarber() {
       state: newSalon.state,
       is_verified: false,
     });
-    if (!error) {
-      setShowAddSalon(false);
-      fetchOwnerData();
-    }
+    if (error) showError("Error: " + error.message);
+    else { setShowAddSalon(false); showSuccess("Salon created!"); fetchOwnerData(); }
   }
 
-  // Earnings calculations
   const totalEarnings = bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const todayEarnings = bookings.filter(b => {
     const today = new Date().toISOString().split("T")[0];
@@ -171,63 +185,62 @@ async function handleAddBarber() {
     </div>
   );
 
-  // No salon yet
   if (!salon) return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex flex-col items-center justify-center h-96 gap-4 px-4">
         <Scissors className="w-16 h-16 text-muted-foreground/30" />
         <h2 className="text-xl font-bold text-foreground">No Salon Yet</h2>
-        <p className="text-muted-foreground text-sm text-center">
-          Create your salon to start accepting bookings
-        </p>
-        <Button
-          className="gradient-primary text-primary-foreground border-0"
-          onClick={() => setShowAddSalon(true)}
-        >
+        <p className="text-muted-foreground text-sm text-center">Create your salon to start accepting bookings</p>
+        <Button className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddSalon(true)}>
           <Plus className="w-4 h-4 mr-2" /> Create My Salon
         </Button>
-
-        {/* Create Salon Modal */}
-        {showAddSalon && (
-          <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
-            <div className="bg-card rounded-xl w-full max-w-md p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-foreground">Create Salon</h3>
-                <button onClick={() => setShowAddSalon(false)}><X className="w-5 h-5" /></button>
-              </div>
-              {[
-                { label: "Salon Name *", key: "name", placeholder: "The Urban Cut" },
-                { label: "Description", key: "description", placeholder: "Premium grooming..." },
-                { label: "Address", key: "address", placeholder: "12 MG Road" },
-                { label: "City", key: "city", placeholder: "Bengaluru" },
-                { label: "State", key: "state", placeholder: "Karnataka" },
-              ].map((field) => (
-                <div key={field.key}>
-                  <label className="block text-sm font-medium mb-1">{field.label}</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={field.placeholder}
-                    value={newSalon[field.key as keyof typeof newSalon]}
-                    onChange={e => setNewSalon({ ...newSalon, [field.key]: e.target.value })}
-                  />
-                </div>
-              ))}
-              <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon}>
-                Create Salon
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {showAddSalon && (
+        <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
+          {[
+            { label: "Salon Name *", key: "name", placeholder: "The Urban Cut" },
+            { label: "Description", key: "description", placeholder: "Premium grooming..." },
+            { label: "Address", key: "address", placeholder: "12 MG Road" },
+            { label: "City", key: "city", placeholder: "Bengaluru" },
+            { label: "State", key: "state", placeholder: "Karnataka" },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block text-sm font-medium mb-1">{field.label}</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={field.placeholder}
+                value={newSalon[field.key as keyof typeof newSalon]}
+                onChange={e => setNewSalon({ ...newSalon, [field.key]: e.target.value })}
+              />
+            </div>
+          ))}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon}>
+            Create Salon
+          </Button>
+        </Modal>
+      )}
     </div>
   );
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="flex">
 
+      {/* Notifications */}
+      {actionSuccess && (
+        <div className="fixed top-4 right-4 z-[998] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+          <Check className="w-4 h-4" /> {actionSuccess}
+        </div>
+      )}
+      {actionError && (
+        <div className="fixed top-4 right-4 z-[998] bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+          <X className="w-4 h-4" /> {actionError}
+        </div>
+      )}
+
+      <div className="flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
           <div className="mb-4 px-2">
@@ -295,9 +308,7 @@ async function handleAddBarber() {
                           <p className="text-xs text-muted-foreground">
                             {b.services?.name} • {b.barbers?.name} • {b.booking_date} at {b.booking_time?.slice(0, 5)}
                           </p>
-                          {b.users?.phone && (
-                            <p className="text-xs text-muted-foreground">{b.users.phone}</p>
-                          )}
+                          {b.users?.phone && <p className="text-xs text-muted-foreground">{b.users.phone}</p>}
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-foreground">₹{b.total_amount}</p>
@@ -306,36 +317,24 @@ async function handleAddBarber() {
                             b.status === "confirmed" ? "bg-blue-500/10 text-blue-500" :
                             b.status === "completed" ? "bg-green-500/10 text-green-500" :
                             "bg-destructive/10 text-destructive"
-                          }`}>
-                            {b.status}
-                          </span>
+                          }`}>{b.status}</span>
                         </div>
                       </div>
                       {b.status === "pending" && (
                         <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            className="flex-1 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
-                            onClick={() => handleUpdateBookingStatus(b.id, "confirmed")}
-                          >
+                          <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
+                            onClick={() => handleUpdateBookingStatus(b.id, "confirmed")}>
                             <Check className="w-3 h-3 mr-1" /> Confirm
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 text-destructive border-destructive/30 text-xs"
-                            onClick={() => handleUpdateBookingStatus(b.id, "cancelled")}
-                          >
+                          <Button size="sm" variant="outline" className="flex-1 text-destructive border-destructive/30 text-xs"
+                            onClick={() => handleUpdateBookingStatus(b.id, "cancelled")}>
                             <X className="w-3 h-3 mr-1" /> Cancel
                           </Button>
                         </div>
                       )}
                       {b.status === "confirmed" && (
-                        <Button
-                          size="sm"
-                          className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
-                          onClick={() => handleUpdateBookingStatus(b.id, "completed")}
-                        >
+                        <Button size="sm" className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
+                          onClick={() => handleUpdateBookingStatus(b.id, "completed")}>
                           Mark as Completed
                         </Button>
                       )}
@@ -351,7 +350,8 @@ async function handleAddBarber() {
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-foreground">Manage Barbers</h2>
-                <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddBarber(true)}>
+                <Button size="sm" className="gradient-primary text-primary-foreground border-0"
+                  onClick={() => setShowAddBarber(true)}>
                   <Plus className="w-4 h-4 mr-1" /> Add Barber
                 </Button>
               </div>
@@ -381,48 +381,13 @@ async function handleAddBarber() {
                         <span className={`text-xs px-2 py-1 rounded flex-1 text-center ${b.is_active ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
                           {b.is_active ? "Active" : "Inactive"}
                         </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs text-destructive border-destructive/30"
-                          onClick={() => handleRemoveBarber(b.id)}
-                        >
+                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30"
+                          onClick={() => handleRemoveBarber(b.id)}>
                           Remove
                         </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-
-              {/* Add Barber Modal */}
-              {showAddBarber && (
-                <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
-                  <div className="bg-card rounded-xl w-full max-w-md p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-foreground">Add Barber</h3>
-                      <button onClick={() => setShowAddBarber(false)}><X className="w-5 h-5" /></button>
-                    </div>
-                    {[
-                      { label: "Name *", key: "name", placeholder: "Rajesh Kumar" },
-                      { label: "Experience (years)", key: "experience", placeholder: "5" },
-                      { label: "Specialties (comma separated)", key: "specialties", placeholder: "Haircut, Beard Trim" },
-                      { label: "Bio", key: "bio", placeholder: "Expert barber..." },
-                    ].map((field) => (
-                      <div key={field.key}>
-                        <label className="block text-sm font-medium mb-1">{field.label}</label>
-                        <input
-                          className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder={field.placeholder}
-                          value={newBarber[field.key as keyof typeof newBarber]}
-                          onChange={e => setNewBarber({ ...newBarber, [field.key]: e.target.value })}
-                        />
-                      </div>
-                    ))}
-                    <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddBarber}>
-                      Add Barber
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>
@@ -433,7 +398,8 @@ async function handleAddBarber() {
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-foreground">Manage Services</h2>
-                <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddService(true)}>
+                <Button size="sm" className="gradient-primary text-primary-foreground border-0"
+                  onClick={() => setShowAddService(true)}>
                   <Plus className="w-4 h-4 mr-1" /> Add Service
                 </Button>
               </div>
@@ -449,48 +415,13 @@ async function handleAddBarber() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-semibold text-foreground">₹{s.price}</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs text-destructive border-destructive/30"
-                          onClick={() => handleRemoveService(s.id)}
-                        >
+                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30"
+                          onClick={() => handleRemoveService(s.id)}>
                           Remove
                         </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-
-              {/* Add Service Modal */}
-              {showAddService && (
-                <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4">
-                  <div className="bg-card rounded-xl w-full max-w-md p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-foreground">Add Service</h3>
-                      <button onClick={() => setShowAddService(false)}><X className="w-5 h-5" /></button>
-                    </div>
-                    {[
-                      { label: "Service Name *", key: "name", placeholder: "Haircut + Beard Trim" },
-                      { label: "Price (₹) *", key: "price", placeholder: "450" },
-                      { label: "Duration (minutes)", key: "duration", placeholder: "45" },
-                    ].map((field) => (
-                      <div key={field.key}>
-                        <label className="block text-sm font-medium mb-1">{field.label}</label>
-                        <input
-                          type={field.key === "price" || field.key === "duration" ? "number" : "text"}
-                          className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder={field.placeholder}
-                          value={newService[field.key as keyof typeof newService]}
-                          onChange={e => setNewService({ ...newService, [field.key]: e.target.value })}
-                        />
-                      </div>
-                    ))}
-                    <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddService}>
-                      Add Service
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>
@@ -516,8 +447,6 @@ async function handleAddBarber() {
                   </div>
                 ))}
               </div>
-
-              {/* Recent completed bookings */}
               <h3 className="text-sm font-semibold text-foreground mb-3">Completed Bookings</h3>
               <div className="space-y-2">
                 {bookings.filter(b => b.status === "completed").map((b) => (
@@ -537,6 +466,80 @@ async function handleAddBarber() {
           )}
         </main>
       </div>
+
+      {/* ALL MODALS — outside all containers */}
+      {showAddBarber && (
+        <Modal title="Add Barber" onClose={() => setShowAddBarber(false)}>
+          {[
+            { label: "Name *", key: "name", placeholder: "Rajesh Kumar" },
+            { label: "Experience (years)", key: "experience", placeholder: "5" },
+            { label: "Specialties (comma separated)", key: "specialties", placeholder: "Haircut, Beard Trim" },
+            { label: "Bio", key: "bio", placeholder: "Expert barber..." },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block text-sm font-medium mb-1">{field.label}</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={field.placeholder}
+                value={newBarber[field.key as keyof typeof newBarber]}
+                onChange={e => setNewBarber({ ...newBarber, [field.key]: e.target.value })}
+              />
+            </div>
+          ))}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddBarber}>
+            Add Barber
+          </Button>
+        </Modal>
+      )}
+
+      {showAddService && (
+        <Modal title="Add Service" onClose={() => setShowAddService(false)}>
+          {[
+            { label: "Service Name *", key: "name", placeholder: "Haircut + Beard Trim" },
+            { label: "Price (₹) *", key: "price", placeholder: "450" },
+            { label: "Duration (minutes)", key: "duration", placeholder: "45" },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block text-sm font-medium mb-1">{field.label}</label>
+              <input
+                type={field.key === "price" || field.key === "duration" ? "number" : "text"}
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={field.placeholder}
+                value={newService[field.key as keyof typeof newService]}
+                onChange={e => setNewService({ ...newService, [field.key]: e.target.value })}
+              />
+            </div>
+          ))}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddService}>
+            Add Service
+          </Button>
+        </Modal>
+      )}
+
+      {showAddSalon && (
+        <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
+          {[
+            { label: "Salon Name *", key: "name", placeholder: "The Urban Cut" },
+            { label: "Description", key: "description", placeholder: "Premium grooming..." },
+            { label: "Address", key: "address", placeholder: "12 MG Road" },
+            { label: "City", key: "city", placeholder: "Bengaluru" },
+            { label: "State", key: "state", placeholder: "Karnataka" },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block text-sm font-medium mb-1">{field.label}</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={field.placeholder}
+                value={newSalon[field.key as keyof typeof newSalon]}
+                onChange={e => setNewSalon({ ...newSalon, [field.key]: e.target.value })}
+              />
+            </div>
+          ))}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon}>
+            Create Salon
+          </Button>
+        </Modal>
+      )}
     </div>
   );
 };
