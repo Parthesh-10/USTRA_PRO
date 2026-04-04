@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check } from "lucide-react";
+mport { useState, useEffect } from "react";
+import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -43,6 +43,7 @@ const OwnerDashboard = () => {
   const [services, setServices] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
  
@@ -95,6 +96,38 @@ const OwnerDashboard = () => {
       setBookings(bookingsRes.data || []);
     }
     setLoading(false);
+  }
+ 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !salon) return;
+ 
+    setUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${salon.id}-${Date.now()}.${fileExt}`;
+ 
+    const { error: uploadError } = await supabase.storage
+      .from('salon-images')
+      .upload(fileName, file, { upsert: true });
+ 
+    if (uploadError) {
+      showError("Upload failed: " + uploadError.message);
+      setUploading(false);
+      return;
+    }
+ 
+    const { data } = supabase.storage.from('salon-images').getPublicUrl(fileName);
+ 
+    const { error } = await supabase.from('salons')
+      .update({ image_url: data.publicUrl })
+      .eq('id', salon.id);
+ 
+    if (error) showError("Error saving image: " + error.message);
+    else {
+      showSuccess("Salon photo updated! ✨");
+      fetchOwnerData();
+    }
+    setUploading(false);
   }
  
   async function handleAddBarber() {
@@ -195,7 +228,6 @@ const OwnerDashboard = () => {
           <Plus className="w-4 h-4 mr-2" /> Create My Salon
         </Button>
       </div>
- 
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
           {[
@@ -242,12 +274,46 @@ const OwnerDashboard = () => {
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
-          <div className="mb-4 px-2">
-            <h2 className="text-sm font-bold text-foreground">{salon.name}</h2>
-            <span className={`text-xs ${salon.is_verified ? "text-green-500" : "text-amber-500"}`}>
-              {salon.is_verified ? "✓ Verified" : "⏳ Pending approval"}
-            </span>
+ 
+          {/* Salon Image Upload */}
+          <div className="mb-4">
+            <div className="relative w-full h-28 rounded-xl overflow-hidden bg-muted mb-2 group cursor-pointer">
+              {salon.image_url ? (
+                <img src={salon.image_url} alt={salon.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                  <Scissors className="w-8 h-8 text-muted-foreground/30" />
+                  <span className="text-xs text-muted-foreground">No photo yet</span>
+                </div>
+              )}
+              <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center gap-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                />
+                {uploading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 text-white" />
+                    <span className="text-white text-xs font-medium">
+                      {salon.image_url ? "Change Photo" : "Add Photo"}
+                    </span>
+                  </>
+                )}
+              </label>
+            </div>
+            <div className="px-1">
+              <h2 className="text-sm font-bold text-foreground">{salon.name}</h2>
+              <span className={`text-xs ${salon.is_verified ? "text-green-500" : "text-amber-500"}`}>
+                {salon.is_verified ? "✓ Verified" : "⏳ Pending approval"}
+              </span>
+            </div>
           </div>
+ 
           <nav className="space-y-1">
             {navItems.map((item) => (
               <button
