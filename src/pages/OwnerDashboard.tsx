@@ -6,17 +6,16 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-
 const navItems = [
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "barbers", label: "Barbers", icon: Users },
   { id: "services", label: "Services", icon: Scissors },
   { id: "earnings", label: "Earnings", icon: BarChart3 },
 ];
- 
+
 const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
   <div
-    className="fixed inset-0 z-[999] flex items-start justify-center p-4 pt-20 overflow-y-auto"
+    className="fixed inset-0 z-[999] flex items-start justify-center p-4 pt-16 overflow-y-auto"
     style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
     onClick={onClose}
   >
@@ -34,7 +33,7 @@ const Modal = ({ title, onClose, children }: { title: string; onClose: () => voi
     </div>
   </div>
 );
- 
+
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -47,39 +46,35 @@ const OwnerDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
- 
+
   const [showAddBarber, setShowAddBarber] = useState(false);
   const [newBarber, setNewBarber] = useState({ name: "", experience: "", specialties: "", bio: "" });
- 
+
   const [showAddService, setShowAddService] = useState(false);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
- 
-  const [showAddSalon, setShowAddSalon] = useState(false);
-  // const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
- 
 
+  const [showAddSalon, setShowAddSalon] = useState(false);
   const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
   const [newSalonImage, setNewSalonImage] = useState<File | null>(null);
   const [newSalonImagePreview, setNewSalonImagePreview] = useState<string>("");
- 
-
+  const [creatingS, setCreatingS] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "owner" && user.role !== "admin") { navigate("/"); return; }
     fetchOwnerData();
   }, [user]);
- 
+
   function showSuccess(msg: string) {
     setActionSuccess(msg);
     setTimeout(() => setActionSuccess(""), 3000);
   }
- 
+
   function showError(msg: string) {
     setActionError(msg);
     setTimeout(() => setActionError(""), 4000);
   }
- 
+
   async function fetchOwnerData() {
     setLoading(true);
     const { data: salonData } = await supabase
@@ -87,7 +82,7 @@ const OwnerDashboard = () => {
       .select("*")
       .eq("owner_id", user?.id)
       .single();
- 
+
     if (salonData) {
       setSalon(salonData);
       const [barbersRes, servicesRes, bookingsRes] = await Promise.all([
@@ -107,44 +102,40 @@ const OwnerDashboard = () => {
   }
 
   function handleNewSalonImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  setNewSalonImage(file);
-  setNewSalonImagePreview(URL.createObjectURL(file));
-}
- 
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewSalonImage(file);
+    setNewSalonImagePreview(URL.createObjectURL(file));
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !salon) return;
- 
+
     setUploading(true);
     const fileExt = file.name.split('.').pop();
     const fileName = `${salon.id}-${Date.now()}.${fileExt}`;
- 
+
     const { error: uploadError } = await supabase.storage
       .from('salon-images')
       .upload(fileName, file, { upsert: true });
- 
+
     if (uploadError) {
       showError("Upload failed: " + uploadError.message);
       setUploading(false);
       return;
     }
- 
+
     const { data } = supabase.storage.from('salon-images').getPublicUrl(fileName);
- 
     const { error } = await supabase.from('salons')
       .update({ image_url: data.publicUrl })
       .eq('id', salon.id);
- 
+
     if (error) showError("Error saving image: " + error.message);
-    else {
-      showSuccess("Salon photo updated! ✨");
-      fetchOwnerData();
-    }
+    else { showSuccess("Salon photo updated! ✨"); fetchOwnerData(); }
     setUploading(false);
   }
- 
+
   async function handleAddBarber() {
     if (!salon || !newBarber.name) { showError("Please enter a barber name"); return; }
     const { error } = await supabase.from("barbers").insert({
@@ -163,13 +154,13 @@ const OwnerDashboard = () => {
       fetchOwnerData();
     }
   }
- 
+
   async function handleRemoveBarber(id: string) {
     const { error } = await supabase.from("barbers").delete().eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Barber removed!"); fetchOwnerData(); }
   }
- 
+
   async function handleAddService() {
     if (!salon || !newService.name || !newService.price) { showError("Please fill required fields"); return; }
     const { error } = await supabase.from("services").insert({
@@ -187,57 +178,60 @@ const OwnerDashboard = () => {
       fetchOwnerData();
     }
   }
- 
+
   async function handleRemoveService(id: string) {
     const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Service removed!"); fetchOwnerData(); }
   }
- 
+
   async function handleUpdateBookingStatus(id: string, status: string) {
     const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
     if (error) showError("Error: " + error.message);
     else { showSuccess("Booking updated!"); fetchOwnerData(); }
   }
- 
+
   async function handleCreateSalon() {
-  if (!newSalon.name) { showError("Please enter salon name"); return; }
-  
-  // First create the salon
-  const { data: salonData, error } = await supabase.from("salons").insert({
-    owner_id: user?.id,
-    name: newSalon.name,
-    description: newSalon.description,
-    address: newSalon.address,
-    city: newSalon.city,
-    state: newSalon.state,
-    is_verified: false,
-  }).select().single();
+    if (!newSalon.name) { showError("Please enter salon name"); return; }
+    setCreatingS(true);
 
-  if (error) { showError("Error: " + error.message); return; }
+    // Create salon first
+    const { data: salonData, error } = await supabase.from("salons").insert({
+      owner_id: user?.id,
+      name: newSalon.name,
+      description: newSalon.description,
+      address: newSalon.address,
+      city: newSalon.city,
+      state: newSalon.state,
+      is_verified: false,
+    }).select().single();
 
-  // Then upload image if selected
-  if (newSalonImage && salonData) {
-    const fileExt = newSalonImage.name.split('.').pop();
-    const fileName = `${salonData.id}-${Date.now()}.${fileExt}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('salon-images')
-      .upload(fileName, newSalonImage, { upsert: true });
+    if (error) { showError("Error: " + error.message); setCreatingS(false); return; }
 
-    if (!uploadError) {
-      const { data } = supabase.storage.from('salon-images').getPublicUrl(fileName);
-      await supabase.from('salons').update({ image_url: data.publicUrl }).eq('id', salonData.id);
+    // Upload image if selected
+    if (newSalonImage && salonData) {
+      const fileExt = newSalonImage.name.split('.').pop();
+      const fileName = `${salonData.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('salon-images')
+        .upload(fileName, newSalonImage, { upsert: true });
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('salon-images').getPublicUrl(fileName);
+        await supabase.from('salons').update({ image_url: urlData.publicUrl }).eq('id', salonData.id);
+      }
     }
+
+    setShowAddSalon(false);
+    setNewSalon({ name: "", description: "", address: "", city: "", state: "" });
+    setNewSalonImage(null);
+    setNewSalonImagePreview("");
+    setCreatingS(false);
+    showSuccess("Salon created! Pending admin approval. 🎉");
+    fetchOwnerData();
   }
 
-  setShowAddSalon(false);
-  setNewSalonImage(null);
-  setNewSalonImagePreview("");
-  showSuccess("Salon created! Pending admin approval.");
-  fetchOwnerData();
-}
- 
   const totalEarnings = bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const todayEarnings = bookings.filter(b => {
     const today = new Date().toISOString().split("T")[0];
@@ -245,7 +239,7 @@ const OwnerDashboard = () => {
   }).reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const pendingBookings = bookings.filter(b => b.status === "pending").length;
   const completedBookings = bookings.filter(b => b.status === "completed").length;
- 
+
   if (loading) return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -254,7 +248,7 @@ const OwnerDashboard = () => {
       </div>
     </div>
   );
- 
+
   if (!salon) return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -266,8 +260,35 @@ const OwnerDashboard = () => {
           <Plus className="w-4 h-4 mr-2" /> Create My Salon
         </Button>
       </div>
+
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
+          {/* Salon Image Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Salon Photo</label>
+            <div className="relative w-full h-36 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-border hover:border-primary transition-colors">
+              {newSalonImagePreview ? (
+                <img src={newSalonImagePreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <Camera className="w-8 h-8 text-muted-foreground/40" />
+                  <span className="text-xs text-muted-foreground">Click to add salon photo</span>
+                </div>
+              )}
+              <label className="absolute inset-0 cursor-pointer">
+                <input type="file" accept="image/*" className="hidden" onChange={handleNewSalonImageSelect} />
+              </label>
+              {newSalonImagePreview && (
+                <button
+                  onClick={() => { setNewSalonImage(null); setNewSalonImagePreview(""); }}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {[
             { label: "Salon Name *", key: "name", placeholder: "The Urban Cut" },
             { label: "Description", key: "description", placeholder: "Premium grooming..." },
@@ -285,18 +306,26 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon}>
-            Create Salon
+          <Button
+            className="w-full gradient-primary text-primary-foreground border-0"
+            onClick={handleCreateSalon}
+            disabled={creatingS}
+          >
+            {creatingS ? (
+              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</>
+            ) : (
+              "Create Salon"
+            )}
           </Button>
         </Modal>
       )}
     </div>
   );
- 
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
- 
+
       {/* Toast Notifications */}
       {actionSuccess && (
         <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
@@ -308,11 +337,10 @@ const OwnerDashboard = () => {
           <X className="w-4 h-4" /> {actionError}
         </div>
       )}
- 
+
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
- 
           {/* Salon Image Upload */}
           <div className="mb-4">
             <div className="relative w-full h-28 rounded-xl overflow-hidden bg-muted mb-2 group cursor-pointer">
@@ -325,13 +353,7 @@ const OwnerDashboard = () => {
                 </div>
               )}
               <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center gap-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={uploading}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                 {uploading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                 ) : (
@@ -351,7 +373,7 @@ const OwnerDashboard = () => {
               </span>
             </div>
           </div>
- 
+
           <nav className="space-y-1">
             {navItems.map((item) => (
               <button
@@ -374,7 +396,7 @@ const OwnerDashboard = () => {
             ))}
           </nav>
         </aside>
- 
+
         {/* Mobile nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-40">
           {navItems.map((item) => (
@@ -390,9 +412,9 @@ const OwnerDashboard = () => {
             </button>
           ))}
         </div>
- 
+
         <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">
- 
+
           {/* Bookings */}
           {activeSection === "bookings" && (
             <div className="animate-fade-in">
@@ -455,7 +477,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
- 
+
           {/* Barbers */}
           {activeSection === "barbers" && (
             <div className="animate-fade-in">
@@ -506,7 +528,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
- 
+
           {/* Services */}
           {activeSection === "services" && (
             <div className="animate-fade-in">
@@ -543,7 +565,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
- 
+
           {/* Earnings */}
           {activeSection === "earnings" && (
             <div className="animate-fade-in">
@@ -583,7 +605,7 @@ const OwnerDashboard = () => {
           )}
         </main>
       </div>
- 
+
       {/* MODALS */}
       {showAddBarber && (
         <Modal title="Add Barber" onClose={() => setShowAddBarber(false)}>
@@ -608,7 +630,7 @@ const OwnerDashboard = () => {
           </Button>
         </Modal>
       )}
- 
+
       {showAddService && (
         <Modal title="Add Service" onClose={() => setShowAddService(false)}>
           {[
@@ -632,9 +654,35 @@ const OwnerDashboard = () => {
           </Button>
         </Modal>
       )}
- 
+
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Salon Photo</label>
+            <div className="relative w-full h-36 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-border hover:border-primary transition-colors">
+              {newSalonImagePreview ? (
+                <img src={newSalonImagePreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <Camera className="w-8 h-8 text-muted-foreground/40" />
+                  <span className="text-xs text-muted-foreground">Click to add salon photo</span>
+                </div>
+              )}
+              <label className="absolute inset-0 cursor-pointer">
+                <input type="file" accept="image/*" className="hidden" onChange={handleNewSalonImageSelect} />
+              </label>
+              {newSalonImagePreview && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setNewSalonImage(null); setNewSalonImagePreview(""); }}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {[
             { label: "Salon Name *", key: "name", placeholder: "The Urban Cut" },
             { label: "Description", key: "description", placeholder: "Premium grooming..." },
@@ -652,13 +700,19 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon}>
-            Create Salon
+          <Button
+            className="w-full gradient-primary text-primary-foreground border-0"
+            onClick={handleCreateSalon}
+            disabled={creatingS}
+          >
+            {creatingS ? (
+              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</>
+            ) : "Create Salon"}
           </Button>
         </Modal>
       )}
     </div>
   );
 };
- 
+
 export default OwnerDashboard;
