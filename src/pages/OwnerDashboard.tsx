@@ -1,11 +1,12 @@
-mport { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
- 
+
+
 const navItems = [
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "barbers", label: "Barbers", icon: Users },
@@ -54,8 +55,15 @@ const OwnerDashboard = () => {
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
  
   const [showAddSalon, setShowAddSalon] = useState(false);
-  const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
+  // const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
  
+
+  const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
+  const [newSalonImage, setNewSalonImage] = useState<File | null>(null);
+  const [newSalonImagePreview, setNewSalonImagePreview] = useState<string>("");
+ 
+
+
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "owner" && user.role !== "admin") { navigate("/"); return; }
@@ -97,6 +105,13 @@ const OwnerDashboard = () => {
     }
     setLoading(false);
   }
+
+  function handleNewSalonImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setNewSalonImage(file);
+  setNewSalonImagePreview(URL.createObjectURL(file));
+}
  
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -186,19 +201,42 @@ const OwnerDashboard = () => {
   }
  
   async function handleCreateSalon() {
-    if (!newSalon.name) { showError("Please enter salon name"); return; }
-    const { error } = await supabase.from("salons").insert({
-      owner_id: user?.id,
-      name: newSalon.name,
-      description: newSalon.description,
-      address: newSalon.address,
-      city: newSalon.city,
-      state: newSalon.state,
-      is_verified: false,
-    });
-    if (error) showError("Error: " + error.message);
-    else { setShowAddSalon(false); showSuccess("Salon created! Pending admin approval."); fetchOwnerData(); }
+  if (!newSalon.name) { showError("Please enter salon name"); return; }
+  
+  // First create the salon
+  const { data: salonData, error } = await supabase.from("salons").insert({
+    owner_id: user?.id,
+    name: newSalon.name,
+    description: newSalon.description,
+    address: newSalon.address,
+    city: newSalon.city,
+    state: newSalon.state,
+    is_verified: false,
+  }).select().single();
+
+  if (error) { showError("Error: " + error.message); return; }
+
+  // Then upload image if selected
+  if (newSalonImage && salonData) {
+    const fileExt = newSalonImage.name.split('.').pop();
+    const fileName = `${salonData.id}-${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('salon-images')
+      .upload(fileName, newSalonImage, { upsert: true });
+
+    if (!uploadError) {
+      const { data } = supabase.storage.from('salon-images').getPublicUrl(fileName);
+      await supabase.from('salons').update({ image_url: data.publicUrl }).eq('id', salonData.id);
+    }
   }
+
+  setShowAddSalon(false);
+  setNewSalonImage(null);
+  setNewSalonImagePreview("");
+  showSuccess("Salon created! Pending admin approval.");
+  fetchOwnerData();
+}
  
   const totalEarnings = bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + (b.total_amount || 0), 0);
   const todayEarnings = bookings.filter(b => {
