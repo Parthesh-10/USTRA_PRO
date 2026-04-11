@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Check, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Calendar as CalendarIcon, Zap, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -21,94 +21,118 @@ const BookingPage = () => {
   const preSelectedBarber = params.get("barber");
   const preSelectedService = params.get("service");
 
-  const [salon, setSalon] = useState<any>(null)
-  const [barbers, setBarbers] = useState<any[]>([])
-  const [services, setServices] = useState<any[]>([])
-  const [bookedSlots, setBookedSlots] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [booking, setBooking] = useState(false)
-  const [error, setError] = useState('')
+  const [salon, setSalon] = useState<any>(null);
+  const [barbers, setBarbers] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState(false);
+  const [error, setError] = useState('');
 
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(0);
   const [selectedServices, setSelectedServices] = useState<string[]>(
     preSelectedService ? [preSelectedService] : []
-  )
-  const [selectedBarber, setSelectedBarber] = useState<string | null>(preSelectedBarber || null)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  );
+  const [selectedBarber, setSelectedBarber] = useState<string | null>(preSelectedBarber || null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [isRushHour, setIsRushHour] = useState(false);
 
   // Time slots 9am - 8pm every 30 mins
   const allSlots = Array.from({ length: 22 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 9
-    const min = i % 2 === 0 ? "00" : "30"
-    const ampm = hour >= 12 ? "PM" : "AM"
-    const displayHour = hour > 12 ? hour - 12 : hour
-    return `${displayHour}:${min} ${ampm}`
-  })
+    const hour = Math.floor(i / 2) + 9;
+    const min = i % 2 === 0 ? "00" : "30";
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${min} ${ampm}`;
+  });
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
-    if (salonId) fetchData()
-  }, [salonId, user])
+    if (salonId) fetchData();
+  }, [salonId, user]);
 
   useEffect(() => {
-    if (selectedDate && selectedBarber) fetchBookedSlots()
-  }, [selectedDate, selectedBarber])
+    if (selectedDate && selectedBarber) fetchBookedSlots();
+  }, [selectedDate, selectedBarber]);
+
+  // Check if selected time is within rush hour
+  useEffect(() => {
+    if (!selectedTime || !salon?.rush_hour_enabled || !salon?.rush_hour_start || !salon?.rush_hour_end) {
+      setIsRushHour(false);
+      return;
+    }
+
+    // Convert selected time to 24hr
+    const [timePart, ampm] = selectedTime.split(" ");
+    const [h, m] = timePart.split(":");
+    let hour = parseInt(h);
+    if (ampm === "PM" && hour !== 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+    const selectedMinutes = hour * 60 + parseInt(m);
+
+    // Convert rush hour times to minutes
+    const [startH, startM] = salon.rush_hour_start.split(":").map(Number);
+    const [endH, endM] = salon.rush_hour_end.split(":").map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    setIsRushHour(selectedMinutes >= startMinutes && selectedMinutes < endMinutes);
+  }, [selectedTime, salon]);
 
   async function fetchData() {
-    setLoading(true)
-
+    setLoading(true);
     const [salonRes, barbersRes, servicesRes] = await Promise.all([
       supabase.from("salons").select("*").eq("id", salonId).single(),
       supabase.from("barbers").select("*").eq("salon_id", salonId).eq("is_active", true),
       supabase.from("services").select("*").eq("salon_id", salonId).eq("is_active", true),
-    ])
-
-    setSalon(salonRes.data)
-    setBarbers(barbersRes.data || [])
-    setServices(servicesRes.data || [])
-    setLoading(false)
+    ]);
+    setSalon(salonRes.data);
+    setBarbers(barbersRes.data || []);
+    setServices(servicesRes.data || []);
+    setLoading(false);
   }
 
   async function fetchBookedSlots() {
-    if (!selectedBarber || !selectedDate) return
-    const dateStr = format(selectedDate, "yyyy-MM-dd")
+    if (!selectedBarber || !selectedDate) return;
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
     const { data } = await supabase
       .from("bookings")
       .select("booking_time")
       .eq("barber_id", selectedBarber)
       .eq("booking_date", dateStr)
-      .neq("status", "cancelled")
+      .neq("status", "cancelled");
 
     setBookedSlots(data?.map((b) => {
-      const [h, m] = b.booking_time.split(":")
-      const hour = parseInt(h)
-      const ampm = hour >= 12 ? "PM" : "AM"
-      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
-      return `${displayHour}:${m} ${ampm}`
-    }) || [])
+      const [h, m] = b.booking_time.split(":");
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${displayHour}:${m} ${ampm}`;
+    }) || []);
   }
 
   async function handleBooking() {
-    if (!user || !salon || !selectedDate || !selectedTime || !selectedBarber) return
-    setBooking(true)
-    setError('')
+    if (!user || !salon || !selectedDate || !selectedTime || !selectedBarber) return;
+    setBooking(true);
+    setError('');
 
-    // Convert time back to 24hr for DB
-    const [timePart, ampm] = selectedTime.split(" ")
-    const [h, m] = timePart.split(":")
-    let hour = parseInt(h)
-    if (ampm === "PM" && hour !== 12) hour += 12
-    if (ampm === "AM" && hour === 12) hour = 0
-    const timeStr = `${hour.toString().padStart(2, "0")}:${m}:00`
-    const dateStr = format(selectedDate, "yyyy-MM-dd")
+    const [timePart, ampm] = selectedTime.split(" ");
+    const [h, m] = timePart.split(":");
+    let hour = parseInt(h);
+    if (ampm === "PM" && hour !== 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+    const timeStr = `${hour.toString().padStart(2, "0")}:${m}:00`;
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-    // Use first selected service
-    const serviceId = selectedServices[0]
-    const totalAmount = selectedServices.reduce((sum, id) => {
-      const svc = services.find((s) => s.id === id)
-      return sum + (svc?.price || 0)
-    }, 0)
+    const serviceId = selectedServices[0];
+    const serviceTotal = selectedServices.reduce((sum, id) => {
+      const svc = services.find((s) => s.id === id);
+      return sum + (svc?.price || 0);
+    }, 0);
+
+    const rushFee = isRushHour ? (salon.rush_fee || 0) : 0;
+    const totalAmount = serviceTotal + rushFee;
 
     const { data, error } = await supabase
       .from("bookings")
@@ -122,38 +146,56 @@ const BookingPage = () => {
         status: "pending",
         payment_status: "pending",
         total_amount: totalAmount,
+        is_rush_hour: isRushHour,
+        rush_fee: rushFee,
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      // Unique constraint = slot already taken
       if (error.code === "23505") {
-        setError("This slot was just booked! Please choose another time.")
+        setError("This slot was just booked! Please choose another time.");
       } else {
-        setError(error.message)
+        setError(error.message);
       }
-      setBooking(false)
+      setBooking(false);
     } else {
-      navigate(`/payment?booking=${data.id}&total=${totalAmount}`)
+      navigate(`/payment?booking=${data.id}&total=${totalAmount}`);
     }
   }
 
   const toggleService = (id: string) => {
     setSelectedServices((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    )
-  }
+    );
+  };
 
-  const totalPrice = selectedServices.reduce((sum, id) => {
-    const svc = services.find((s) => s.id === id)
-    return sum + (svc?.price || 0)
-  }, 0)
+  const serviceTotal = selectedServices.reduce((sum, id) => {
+    const svc = services.find((s) => s.id === id);
+    return sum + (svc?.price || 0);
+  }, 0);
+
+  const rushFee = isRushHour ? (salon?.rush_fee || 0) : 0;
+  const totalPrice = serviceTotal + rushFee;
+
+  // Check if a time slot is within rush hours
+  function isSlotRushHour(slot: string): boolean {
+    if (!salon?.rush_hour_enabled || !salon?.rush_hour_start || !salon?.rush_hour_end) return false;
+    const [timePart, ampm] = slot.split(" ");
+    const [h, m] = timePart.split(":");
+    let hour = parseInt(h);
+    if (ampm === "PM" && hour !== 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+    const slotMinutes = hour * 60 + parseInt(m);
+    const [startH, startM] = salon.rush_hour_start.split(":").map(Number);
+    const [endH, endM] = salon.rush_hour_end.split(":").map(Number);
+    return slotMinutes >= startH * 60 + startM && slotMinutes < endH * 60 + endM;
+  }
 
   const canProceed =
     (step === 0 && selectedServices.length > 0) ||
     (step === 1 && selectedBarber !== null) ||
-    (step === 2 && selectedDate && selectedTime)
+    (step === 2 && selectedDate && selectedTime);
 
   if (loading) return (
     <div className="min-h-screen bg-background">
@@ -162,18 +204,39 @@ const BookingPage = () => {
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <Link
-          to={`/salon/${salonId}`}
-          className="inline-flex items-center gap-1 text-muted-foreground text-sm mb-4 hover:text-foreground"
-        >
+        <Link to={`/salon/${salonId}`} className="inline-flex items-center gap-1 text-muted-foreground text-sm mb-4 hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back to {salon?.name}
         </Link>
+
+        {/* Salon info bar */}
+        {salon && (
+          <div className="bg-card rounded-xl p-3 mb-6 flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-foreground text-sm">{salon.name}</p>
+              <p className="text-xs text-muted-foreground">{salon.address}, {salon.city}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {salon.rush_hour_enabled && (
+                <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span className="text-xs text-amber-500 font-medium">Rush Hour Available</span>
+                </div>
+              )}
+              {salon.phone && (
+                <a href={`tel:${salon.phone}`} className="flex items-center gap-1 text-primary hover:underline">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span className="text-xs">{salon.phone}</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stepper */}
         <div className="flex items-center gap-2 mb-8">
@@ -236,12 +299,7 @@ const BookingPage = () => {
             {barbers.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No barbers available.</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => setSelectedBarber("any")}
-                >
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => setSelectedBarber("any")}>
                   Continue with any barber
                 </Button>
               </div>
@@ -252,9 +310,7 @@ const BookingPage = () => {
                     key={b.id}
                     onClick={() => setSelectedBarber(b.id)}
                     className={`text-left p-4 rounded-xl border-2 transition-all bg-card ${
-                      selectedBarber === b.id
-                        ? "border-primary bg-accent"
-                        : "border-border hover:border-primary/30"
+                      selectedBarber === b.id ? "border-primary bg-accent" : "border-border hover:border-primary/30"
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
@@ -289,6 +345,21 @@ const BookingPage = () => {
         {step === 2 && (
           <div className="space-y-6 animate-fade-in">
             <h2 className="text-lg font-bold text-foreground">Select Date & Time</h2>
+
+            {/* Rush Hour Info Banner */}
+            {salon?.rush_hour_enabled && salon?.rush_hour_start && salon?.rush_hour_end && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
+                <Zap className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-500">Rush Hour Available ⚡</p>
+                  <p className="text-xs text-amber-500/80 mt-0.5">
+                    Slots between {salon.rush_hour_start.slice(0, 5)} – {salon.rush_hour_end.slice(0, 5)} are Rush Hour.
+                    Priority service with +₹{salon.rush_fee} extra charge.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div>
               <p className="text-sm font-medium text-foreground mb-2">Date</p>
               <Popover>
@@ -315,29 +386,53 @@ const BookingPage = () => {
 
             {selectedDate && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-3">Available Slots</p>
+                <p className="text-sm font-medium text-foreground mb-3">
+                  Available Slots
+                  {salon?.rush_hour_enabled && (
+                    <span className="ml-2 text-xs text-amber-500">⚡ = Rush Hour (+₹{salon.rush_fee})</span>
+                  )}
+                </p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {allSlots.map((slot) => {
-                    const isBooked = bookedSlots.includes(slot)
-                    const isSelected = selectedTime === slot
+                    const isBooked = bookedSlots.includes(slot);
+                    const isSelected = selectedTime === slot;
+                    const isRush = isSlotRushHour(slot);
                     return (
                       <button
                         key={slot}
                         disabled={isBooked}
                         onClick={() => setSelectedTime(slot)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-all relative ${
                           isBooked
                             ? "bg-muted text-muted-foreground/40 cursor-not-allowed line-through"
                             : isSelected
                             ? "gradient-primary text-primary-foreground"
+                            : isRush
+                            ? "bg-amber-500/10 border border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
                             : "bg-card border border-border hover:border-primary text-foreground"
                         }`}
                       >
                         {slot}
+                        {isRush && !isBooked && (
+                          <span className="absolute -top-1 -right-1 text-xs">⚡</span>
+                        )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Rush Hour confirmation when rush slot selected */}
+            {isRushHour && selectedTime && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <p className="text-sm font-semibold text-amber-500">Rush Hour Slot Selected!</p>
+                </div>
+                <p className="text-xs text-amber-500/80">
+                  You'll get priority service. An extra ₹{salon?.rush_fee} rush fee applies.
+                </p>
               </div>
             )}
           </div>
@@ -345,9 +440,7 @@ const BookingPage = () => {
 
         {/* Error */}
         {error && (
-          <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm">
-            {error}
-          </div>
+          <div className="mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm">{error}</div>
         )}
 
         {/* Booking Summary */}
@@ -380,6 +473,20 @@ const BookingPage = () => {
                 <span className="text-foreground">{format(selectedDate, "dd MMM")} at {selectedTime}</span>
               </div>
             )}
+            {serviceTotal > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Service Total</span>
+                <span className="text-foreground">₹{serviceTotal}</span>
+              </div>
+            )}
+            {isRushHour && rushFee > 0 && (
+              <div className="flex justify-between text-amber-500">
+                <span className="flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Rush Fee
+                </span>
+                <span>+₹{rushFee}</span>
+              </div>
+            )}
             <div className="border-t border-border pt-2 flex justify-between font-semibold text-foreground">
               <span>Total</span>
               <span>₹{totalPrice}</span>
@@ -390,9 +497,7 @@ const BookingPage = () => {
         {/* Navigation buttons */}
         <div className="flex gap-3 mt-6">
           {step > 0 && (
-            <Button variant="outline" className="flex-1" onClick={() => setStep(step - 1)}>
-              Back
-            </Button>
+            <Button variant="outline" className="flex-1" onClick={() => setStep(step - 1)}>Back</Button>
           )}
           {step < 2 ? (
             <Button
@@ -408,7 +513,7 @@ const BookingPage = () => {
               disabled={!canProceed || booking}
               onClick={handleBooking}
             >
-              {booking ? "Booking..." : "Confirm Booking"}
+              {booking ? "Booking..." : isRushHour ? `⚡ Confirm Rush Booking (₹${totalPrice})` : `Confirm Booking (₹${totalPrice})`}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           )}
