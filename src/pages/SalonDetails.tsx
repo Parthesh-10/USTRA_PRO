@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Scissors } from "lucide-react";
+import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Scissors, Phone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -15,37 +15,33 @@ const SalonDetails = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) fetchSalonData()
-  }, [id])
+    if (id) fetchSalonData();
+  }, [id]);
 
   async function fetchSalonData() {
-    setLoading(true)
-
-    // Fetch salon
+    setLoading(true);
     const { data: salonData } = await supabase
       .from("salons")
       .select("*")
       .eq("id", id)
-      .single()
+      .single();
 
-    // Fetch barbers
     const { data: barbersData } = await supabase
       .from("barbers")
       .select("*, barber_images(image_url)")
       .eq("salon_id", id)
-      .eq("is_active", true)
+      .eq("is_active", true);
 
-    // Fetch services
     const { data: servicesData } = await supabase
       .from("services")
       .select("*")
       .eq("salon_id", id)
-      .eq("is_active", true)
+      .eq("is_active", true);
 
-    setSalon(salonData)
-    setBarbers(barbersData || [])
-    setServices(servicesData || [])
-    setLoading(false)
+    setSalon(salonData);
+    setBarbers(barbersData || []);
+    setServices(servicesData || []);
+    setLoading(false);
   }
 
   if (loading) return (
@@ -55,7 +51,7 @@ const SalonDetails = () => {
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
       </div>
     </div>
-  )
+  );
 
   if (!salon) return (
     <div className="min-h-screen bg-background">
@@ -65,7 +61,7 @@ const SalonDetails = () => {
         <Link to="/"><Button variant="outline">Back to Home</Button></Link>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,7 +98,40 @@ const SalonDetails = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-10">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+
+        {/* Info bar — Phone + Rush Hour */}
+        {(salon.phone || salon.rush_hour_enabled) && (
+          <div className="flex flex-wrap items-center gap-3">
+            {salon.phone && (
+              <a
+                href={`tel:${salon.phone}`}
+                className="flex items-center gap-2 bg-card px-4 py-2.5 rounded-xl shadow-card hover:bg-accent transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Phone className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Call Salon</p>
+                  <p className="text-sm font-semibold text-foreground">{salon.phone}</p>
+                </div>
+              </a>
+            )}
+            {salon.rush_hour_enabled && salon.rush_hour_start && salon.rush_hour_end && (
+              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-amber-500/80">Rush Hour</p>
+                  <p className="text-sm font-semibold text-amber-500">
+                    {salon.rush_hour_start.slice(0, 5)} – {salon.rush_hour_end.slice(0, 5)} • +₹{salon.rush_fee}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Description */}
         {salon.description && (
@@ -148,18 +177,12 @@ const SalonDetails = () => {
                   key={b.id}
                   onClick={() => setShowBarberModal(b)}
                   className={`bg-card rounded-xl p-4 shadow-card cursor-pointer transition-all border-2 ${
-                    selectedBarber === b.id
-                      ? "border-primary"
-                      : "border-transparent hover:border-primary/30"
+                    selectedBarber === b.id ? "border-primary" : "border-transparent hover:border-primary/30"
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     {b.barber_images?.[0]?.image_url ? (
-                      <img
-                        src={b.barber_images[0].image_url}
-                        alt={b.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
+                      <img src={b.barber_images[0].image_url} alt={b.name} className="w-12 h-12 rounded-full object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                         <Scissors className="w-5 h-5 text-primary" />
@@ -178,9 +201,7 @@ const SalonDetails = () => {
                   {b.specialties?.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {b.specialties.slice(0, 2).map((s: string) => (
-                        <span key={s} className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-md">
-                          {s}
-                        </span>
+                        <span key={s} className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-md">{s}</span>
                       ))}
                     </div>
                   )}
@@ -220,11 +241,7 @@ const SalonDetails = () => {
           >
             <div className="flex items-start gap-4 mb-4">
               {showBarberModal.barber_images?.[0]?.image_url ? (
-                <img
-                  src={showBarberModal.barber_images[0].image_url}
-                  alt={showBarberModal.name}
-                  className="w-20 h-20 rounded-xl object-cover"
-                />
+                <img src={showBarberModal.barber_images[0].image_url} alt={showBarberModal.name} className="w-20 h-20 rounded-xl object-cover" />
               ) : (
                 <div className="w-20 h-20 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Scissors className="w-8 h-8 text-primary" />
@@ -241,7 +258,6 @@ const SalonDetails = () => {
                 </div>
               </div>
             </div>
-
             {showBarberModal.specialties?.length > 0 && (
               <div className="mb-4">
                 <p className="text-sm font-semibold text-foreground mb-2">Specialties</p>
@@ -252,19 +268,9 @@ const SalonDetails = () => {
                 </div>
               </div>
             )}
-
             <div className="flex gap-3 mt-4">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowBarberModal(null)}
-              >
-                Close
-              </Button>
-              <Link
-                to={`/booking?salon=${salon.id}&barber=${showBarberModal.id}`}
-                className="flex-1"
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setShowBarberModal(null)}>Close</Button>
+              <Link to={`/booking?salon=${salon.id}&barber=${showBarberModal.id}`} className="flex-1">
                 <Button className="w-full gradient-primary text-primary-foreground border-0">
                   Book with {showBarberModal.name}
                 </Button>

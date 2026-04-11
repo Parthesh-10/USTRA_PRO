@@ -9,6 +9,9 @@ export interface Salon {
   address: string;
   services: string[];
   openNow: boolean;
+  phone?: string;
+  rushHourEnabled?: boolean;
+  rushFee?: number;
 }
 
 export interface Barber {

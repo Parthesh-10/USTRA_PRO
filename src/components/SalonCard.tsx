@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, MapPin, Scissors } from "lucide-react";
+import { Star, MapPin, Scissors, Phone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from "@/data/types";
@@ -25,7 +25,7 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
           </div>
         )}
 
-        {/* Gradient overlay at bottom */}
+        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
         {/* Salon name on image */}
@@ -38,6 +38,15 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
           <Badge className="absolute top-3 left-3 bg-salon-green text-salon-green-foreground border-0 text-xs">
             Open Now
           </Badge>
+        )}
+
+        {/* Rush Hour badge */}
+        {salon.rushHourEnabled && (
+          <div className="absolute top-3 left-3 mt-6">
+            <Badge className="bg-amber-500/90 text-white border-0 text-xs flex items-center gap-1">
+              <Zap className="w-3 h-3" /> Rush Hour
+            </Badge>
+          </div>
         )}
 
         {/* Rating */}
@@ -59,6 +68,19 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
             </>
           )}
         </div>
+
+        {/* Phone number */}
+        {salon.phone && (
+          <a
+            href={`tel:${salon.phone}`}
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-primary text-xs mb-2 hover:underline w-fit"
+          >
+            <Phone className="w-3 h-3" />
+            {salon.phone}
+          </a>
+        )}
+
         <div className="flex flex-wrap gap-1.5 mb-3">
           {salon.services.slice(0, 3).map((s) => (
             <span key={s} className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-md">{s}</span>
@@ -67,6 +89,7 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
             <span className="text-xs text-muted-foreground">+{salon.services.length - 3}</span>
           )}
         </div>
+
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">{salon.priceRange}</span>
           <Link to={`/salon/${salon.id}`}>
