@@ -13,8 +13,8 @@ interface User {
 interface AuthContextType {
   user: User | null
   loading: boolean
-  signUp: (email: string, password: string, name: string, role?: string) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, name: string, role?: string, phone?: string) => Promise<{ error: any }>
+  signIn: (emailOrPhone: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
 }
 
@@ -25,13 +25,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) fetchUser(session.user.id)
       else setLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) fetchUser(session.user.id)
@@ -51,17 +49,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }
 
-  async function signUp(email: string, password: string, name: string, role = 'customer') {
+  async function signUp(email: string, password: string, name: string, role = 'customer', phone?: string) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, role } }
+      options: { data: { name, role, phone: phone || '' } }
     })
+    // If signup succeeded and phone provided, update users table with phone
+    if (!error && phone) {
+      // Small delay for trigger to create user row
+      setTimeout(async () => {
+        await supabase
+          .from('users')
+          .update({ phone })
+          .eq('email', email)
+      }, 1000)
+    }
     return { error }
   }
 
-  async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  async function signIn(emailOrPhone: string, password: string) {
+    let loginEmail = emailOrPhone
+
+    // If it looks like a phone number (10 digits), convert to generated email
+    const cleanInput = emailOrPhone.replace(/\s+/g, '').replace('+91', '')
+    if (/^\d{10}$/.test(cleanInput)) {
+      loginEmail = `${cleanInput}@ustra.app`
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password
+    })
     return { error }
   }
 
