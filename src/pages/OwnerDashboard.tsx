@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check, Camera } from "lucide-react";
+import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check, Camera, Phone, Zap, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +10,7 @@ const navItems = [
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "barbers", label: "Barbers", icon: Users },
   { id: "services", label: "Services", icon: Scissors },
+  { id: "settings", label: "Settings", icon: Settings },
   { id: "earnings", label: "Earnings", icon: BarChart3 },
 ];
 
@@ -54,10 +55,20 @@ const OwnerDashboard = () => {
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
 
   const [showAddSalon, setShowAddSalon] = useState(false);
-  const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "" });
+  const [newSalon, setNewSalon] = useState({ name: "", description: "", address: "", city: "", state: "", phone: "" });
   const [newSalonImage, setNewSalonImage] = useState<File | null>(null);
   const [newSalonImagePreview, setNewSalonImagePreview] = useState<string>("");
   const [creatingS, setCreatingS] = useState(false);
+
+  // Settings state
+  const [settingsForm, setSettingsForm] = useState({
+    phone: "",
+    rush_hour_enabled: false,
+    rush_hour_start: "",
+    rush_hour_end: "",
+    rush_fee: "",
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
@@ -85,6 +96,15 @@ const OwnerDashboard = () => {
 
     if (salonData) {
       setSalon(salonData);
+      // Pre-fill settings form with existing data
+      setSettingsForm({
+        phone: salonData.phone || "",
+        rush_hour_enabled: salonData.rush_hour_enabled || false,
+        rush_hour_start: salonData.rush_hour_start || "",
+        rush_hour_end: salonData.rush_hour_end || "",
+        rush_fee: salonData.rush_fee?.toString() || "",
+      });
+
       const [barbersRes, servicesRes, bookingsRes] = await Promise.all([
         supabase.from("barbers").select("*").eq("salon_id", salonData.id),
         supabase.from("services").select("*").eq("salon_id", salonData.id),
@@ -99,6 +119,23 @@ const OwnerDashboard = () => {
       setBookings(bookingsRes.data || []);
     }
     setLoading(false);
+  }
+
+  async function handleSaveSettings() {
+    if (!salon) return;
+    setSavingSettings(true);
+
+    const { error } = await supabase.from("salons").update({
+      phone: settingsForm.phone,
+      rush_hour_enabled: settingsForm.rush_hour_enabled,
+      rush_hour_start: settingsForm.rush_hour_start || null,
+      rush_hour_end: settingsForm.rush_hour_end || null,
+      rush_fee: parseInt(settingsForm.rush_fee) || 0,
+    }).eq("id", salon.id);
+
+    if (error) showError("Error saving settings: " + error.message);
+    else { showSuccess("Settings saved! ✅"); fetchOwnerData(); }
+    setSavingSettings(false);
   }
 
   function handleNewSalonImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -195,7 +232,6 @@ const OwnerDashboard = () => {
     if (!newSalon.name) { showError("Please enter salon name"); return; }
     setCreatingS(true);
 
-    // Create salon first
     const { data: salonData, error } = await supabase.from("salons").insert({
       owner_id: user?.id,
       name: newSalon.name,
@@ -203,20 +239,18 @@ const OwnerDashboard = () => {
       address: newSalon.address,
       city: newSalon.city,
       state: newSalon.state,
+      phone: newSalon.phone,
       is_verified: false,
     }).select().single();
 
     if (error) { showError("Error: " + error.message); setCreatingS(false); return; }
 
-    // Upload image if selected
     if (newSalonImage && salonData) {
       const fileExt = newSalonImage.name.split('.').pop();
       const fileName = `${salonData.id}-${Date.now()}.${fileExt}`;
-
       const { error: uploadError } = await supabase.storage
         .from('salon-images')
         .upload(fileName, newSalonImage, { upsert: true });
-
       if (!uploadError) {
         const { data: urlData } = supabase.storage.from('salon-images').getPublicUrl(fileName);
         await supabase.from('salons').update({ image_url: urlData.publicUrl }).eq('id', salonData.id);
@@ -224,7 +258,7 @@ const OwnerDashboard = () => {
     }
 
     setShowAddSalon(false);
-    setNewSalon({ name: "", description: "", address: "", city: "", state: "" });
+    setNewSalon({ name: "", description: "", address: "", city: "", state: "", phone: "" });
     setNewSalonImage(null);
     setNewSalonImagePreview("");
     setCreatingS(false);
@@ -263,7 +297,6 @@ const OwnerDashboard = () => {
 
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
-          {/* Salon Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-1">Salon Photo</label>
             <div className="relative w-full h-36 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-border hover:border-primary transition-colors">
@@ -280,8 +313,8 @@ const OwnerDashboard = () => {
               </label>
               {newSalonImagePreview && (
                 <button
-                  onClick={() => { setNewSalonImage(null); setNewSalonImagePreview(""); }}
-                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80"
+                  onClick={(e) => { e.stopPropagation(); setNewSalonImage(null); setNewSalonImagePreview(""); }}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -295,6 +328,7 @@ const OwnerDashboard = () => {
             { label: "Address", key: "address", placeholder: "12 MG Road" },
             { label: "City", key: "city", placeholder: "Bengaluru" },
             { label: "State", key: "state", placeholder: "Karnataka" },
+            { label: "Phone Number", key: "phone", placeholder: "+91 98765 43210" },
           ].map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium mb-1">{field.label}</label>
@@ -306,16 +340,8 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button
-            className="w-full gradient-primary text-primary-foreground border-0"
-            onClick={handleCreateSalon}
-            disabled={creatingS}
-          >
-            {creatingS ? (
-              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</>
-            ) : (
-              "Create Salon"
-            )}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon} disabled={creatingS}>
+            {creatingS ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</> : "Create Salon"}
           </Button>
         </Modal>
       )}
@@ -326,7 +352,6 @@ const OwnerDashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Toast Notifications */}
       {actionSuccess && (
         <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in">
           <Check className="w-4 h-4" /> {actionSuccess}
@@ -341,7 +366,6 @@ const OwnerDashboard = () => {
       <div className="flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 min-h-[calc(100vh-4rem)] bg-card border-r border-border p-4">
-          {/* Salon Image Upload */}
           <div className="mb-4">
             <div className="relative w-full h-28 rounded-xl overflow-hidden bg-muted mb-2 group cursor-pointer">
               {salon.image_url ? (
@@ -357,12 +381,7 @@ const OwnerDashboard = () => {
                 {uploading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                 ) : (
-                  <>
-                    <Camera className="w-4 h-4 text-white" />
-                    <span className="text-white text-xs font-medium">
-                      {salon.image_url ? "Change Photo" : "Add Photo"}
-                    </span>
-                  </>
+                  <><Camera className="w-4 h-4 text-white" /><span className="text-white text-xs font-medium">{salon.image_url ? "Change Photo" : "Add Photo"}</span></>
                 )}
               </label>
             </div>
@@ -371,6 +390,18 @@ const OwnerDashboard = () => {
               <span className={`text-xs ${salon.is_verified ? "text-green-500" : "text-amber-500"}`}>
                 {salon.is_verified ? "✓ Verified" : "⏳ Pending approval"}
               </span>
+              {salon.phone && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Phone className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{salon.phone}</span>
+                </div>
+              )}
+              {salon.rush_hour_enabled && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span className="text-xs text-amber-500">Rush Hour Active</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -388,9 +419,7 @@ const OwnerDashboard = () => {
                 <item.icon className="w-4 h-4" />
                 {item.label}
                 {item.id === "bookings" && pendingBookings > 0 && (
-                  <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
-                    {pendingBookings}
-                  </span>
+                  <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">{pendingBookings}</span>
                 )}
               </button>
             ))}
@@ -421,9 +450,7 @@ const OwnerDashboard = () => {
               <h2 className="text-lg font-bold text-foreground mb-6">
                 Bookings
                 {pendingBookings > 0 && (
-                  <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                    {pendingBookings} pending
-                  </span>
+                  <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{pendingBookings} pending</span>
                 )}
               </h2>
               {bookings.length === 0 ? (
@@ -437,7 +464,14 @@ const OwnerDashboard = () => {
                     <div key={b.id} className="bg-card rounded-xl p-4 shadow-card">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-medium text-foreground text-sm">{b.users?.name || "Customer"}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-foreground text-sm">{b.users?.name || "Customer"}</p>
+                            {b.is_rush_hour && (
+                              <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Zap className="w-3 h-3" /> Rush Hour
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {b.services?.name} • {b.barbers?.name} • {b.booking_date} at {b.booking_time?.slice(0, 5)}
                           </p>
@@ -445,6 +479,9 @@ const OwnerDashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-foreground">₹{b.total_amount}</p>
+                          {b.is_rush_hour && b.rush_fee > 0 && (
+                            <p className="text-xs text-amber-500">+₹{b.rush_fee} rush</p>
+                          )}
                           <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                             b.status === "pending" ? "bg-amber-500/10 text-amber-500" :
                             b.status === "confirmed" ? "bg-blue-500/10 text-blue-500" :
@@ -483,8 +520,7 @@ const OwnerDashboard = () => {
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-foreground">Manage Barbers</h2>
-                <Button size="sm" className="gradient-primary text-primary-foreground border-0"
-                  onClick={() => setShowAddBarber(true)}>
+                <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddBarber(true)}>
                   <Plus className="w-4 h-4 mr-1" /> Add Barber
                 </Button>
               </div>
@@ -517,8 +553,7 @@ const OwnerDashboard = () => {
                         <span className={`text-xs px-2 py-1 rounded flex-1 text-center ${b.is_active ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
                           {b.is_active ? "Active" : "Inactive"}
                         </span>
-                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30"
-                          onClick={() => handleRemoveBarber(b.id)}>
+                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30" onClick={() => handleRemoveBarber(b.id)}>
                           Remove
                         </Button>
                       </div>
@@ -534,8 +569,7 @@ const OwnerDashboard = () => {
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-foreground">Manage Services</h2>
-                <Button size="sm" className="gradient-primary text-primary-foreground border-0"
-                  onClick={() => setShowAddService(true)}>
+                <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddService(true)}>
                   <Plus className="w-4 h-4 mr-1" /> Add Service
                 </Button>
               </div>
@@ -554,8 +588,7 @@ const OwnerDashboard = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-semibold text-foreground">₹{s.price}</span>
-                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30"
-                          onClick={() => handleRemoveService(s.id)}>
+                        <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30" onClick={() => handleRemoveService(s.id)}>
                           Remove
                         </Button>
                       </div>
@@ -563,6 +596,115 @@ const OwnerDashboard = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Settings — Phone + Rush Hour */}
+          {activeSection === "settings" && (
+            <div className="animate-fade-in max-w-lg">
+              <h2 className="text-lg font-bold text-foreground mb-6">Salon Settings</h2>
+
+              {/* Phone Number */}
+              <div className="bg-card rounded-xl p-5 shadow-card mb-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Phone className="w-4 h-4 text-primary" />
+                  <h3 className="font-semibold text-foreground">Contact Number</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  This number will be visible to customers on your salon page and cards.
+                </p>
+                <input
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="+91 98765 43210"
+                  value={settingsForm.phone}
+                  onChange={e => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+                />
+              </div>
+
+              {/* Rush Hour */}
+              <div className="bg-card rounded-xl p-5 shadow-card mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <h3 className="font-semibold text-foreground">Rush Hour Booking</h3>
+                  </div>
+                  {/* Toggle */}
+                  <button
+                    onClick={() => setSettingsForm({ ...settingsForm, rush_hour_enabled: !settingsForm.rush_hour_enabled })}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      settingsForm.rush_hour_enabled ? "bg-amber-500" : "bg-muted"
+                    }`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow ${
+                      settingsForm.rush_hour_enabled ? "translate-x-6" : "translate-x-1"
+                    }`} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Customers can pay extra for priority service during rush hours. Set your hours and extra fee below.
+                </p>
+
+                {settingsForm.rush_hour_enabled && (
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Start Time</label>
+                        <input
+                          type="time"
+                          className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          value={settingsForm.rush_hour_start}
+                          onChange={e => setSettingsForm({ ...settingsForm, rush_hour_start: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">End Time</label>
+                        <input
+                          type="time"
+                          className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          value={settingsForm.rush_hour_end}
+                          onChange={e => setSettingsForm({ ...settingsForm, rush_hour_end: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Extra Rush Fee (₹)</label>
+                      <input
+                        type="number"
+                        className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="e.g. 100"
+                        value={settingsForm.rush_fee}
+                        onChange={e => setSettingsForm({ ...settingsForm, rush_fee: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Customer pays ₹{settingsForm.rush_fee || 0} extra for rush hour booking
+                      </p>
+                    </div>
+
+                    {/* Preview */}
+                    {settingsForm.rush_hour_start && settingsForm.rush_hour_end && (
+                      <div className="bg-amber-500/10 rounded-lg p-3">
+                        <p className="text-xs text-amber-500 font-medium">
+                          ⚡ Rush Hour: {settingsForm.rush_hour_start} – {settingsForm.rush_hour_end}
+                        </p>
+                        <p className="text-xs text-amber-500/80 mt-0.5">
+                          Customers pay +₹{settingsForm.rush_fee || 0} during this time
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                className="w-full gradient-primary text-primary-foreground border-0"
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+              >
+                {savingSettings
+                  ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Saving...</>
+                  : "Save Settings"
+                }
+              </Button>
             </div>
           )}
 
@@ -625,9 +767,7 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddBarber}>
-            Add Barber
-          </Button>
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddBarber}>Add Barber</Button>
         </Modal>
       )}
 
@@ -649,15 +789,12 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddService}>
-            Add Service
-          </Button>
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleAddService}>Add Service</Button>
         </Modal>
       )}
 
       {showAddSalon && (
         <Modal title="Create Salon" onClose={() => setShowAddSalon(false)}>
-          {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-1">Salon Photo</label>
             <div className="relative w-full h-36 rounded-xl overflow-hidden bg-muted border-2 border-dashed border-border hover:border-primary transition-colors">
@@ -673,10 +810,8 @@ const OwnerDashboard = () => {
                 <input type="file" accept="image/*" className="hidden" onChange={handleNewSalonImageSelect} />
               </label>
               {newSalonImagePreview && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setNewSalonImage(null); setNewSalonImagePreview(""); }}
-                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
-                >
+                <button onClick={(e) => { e.stopPropagation(); setNewSalonImage(null); setNewSalonImagePreview(""); }}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10">
                   <X className="w-3 h-3" />
                 </button>
               )}
@@ -689,6 +824,7 @@ const OwnerDashboard = () => {
             { label: "Address", key: "address", placeholder: "12 MG Road" },
             { label: "City", key: "city", placeholder: "Bengaluru" },
             { label: "State", key: "state", placeholder: "Karnataka" },
+            { label: "Phone Number", key: "phone", placeholder: "+91 98765 43210" },
           ].map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium mb-1">{field.label}</label>
@@ -700,14 +836,8 @@ const OwnerDashboard = () => {
               />
             </div>
           ))}
-          <Button
-            className="w-full gradient-primary text-primary-foreground border-0"
-            onClick={handleCreateSalon}
-            disabled={creatingS}
-          >
-            {creatingS ? (
-              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</>
-            ) : "Create Salon"}
+          <Button className="w-full gradient-primary text-primary-foreground border-0" onClick={handleCreateSalon} disabled={creatingS}>
+            {creatingS ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Creating...</> : "Create Salon"}
           </Button>
         </Modal>
       )}
