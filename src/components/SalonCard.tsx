@@ -78,7 +78,7 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
         <div className="flex items-center justify-between pt-4 border-t border-[#FFFFFF]/30">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-[#9AA899] uppercase tracking-widest">Starting at</span>
-            <span className="text-lg font-extrabold text-[#54577C]">{salon.priceRange === "₹₹" ? "₹299" : salon.priceRange}</span>
+            <span className="text-lg font-extrabold text-[#54577C]">{salon.priceRange}</span>
           </div>
           <Button size="sm" className="gradient-primary text-white border-0 shadow-sm shadow-primary/20 rounded-xl px-5 py-5 group-hover:scale-105 transition-transform">
             Book Now

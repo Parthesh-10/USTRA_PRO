@@ -51,7 +51,7 @@ const Index = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("salons")
-      .select("*, services(name)")
+      .select("*, services(name, price)")
       .eq("is_verified", true)
       .order("rating", { ascending: false });
 
@@ -77,6 +77,19 @@ const Index = () => {
   }
 
   function formatSalon(salon: any) {
+    const services: { name: string; price: number }[] = salon.services || [];
+
+    // Find the haircut service price, fallback to the cheapest service
+    const haircutService = services.find((s) =>
+      s.name?.toLowerCase().includes("haircut") ||
+      s.name?.toLowerCase().includes("hair cut") ||
+      s.name?.toLowerCase().includes("cut")
+    );
+    const cheapestService = services.reduce((min: any, s: any) =>
+      s.price && (!min || s.price < min.price) ? s : min, null
+    );
+    const startingPrice = haircutService?.price || cheapestService?.price || null;
+
     return {
       id: salon.id,
       name: salon.name,
@@ -85,9 +98,9 @@ const Index = () => {
       reviewCount: salon.total_reviews || 0,
       image: salon.image_url || heroImages[0],
       openNow: true,
-      priceRange: "₹₹",
+      priceRange: startingPrice ? `₹${startingPrice}` : "₹₹",
       distance: salon.city || "",
-      services: salon.services?.map((s: any) => s.name) || [],
+      services: services.map((s) => s.name) || [],
       tags: [],
     };
   }
