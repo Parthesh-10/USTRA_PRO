@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, User, Phone, Lock, Mail, Store } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function Signup() {
   const { signUp } = useAuth()
@@ -53,37 +54,46 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF]/50 relative overflow-hidden px-4">
+      
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#FFFFFF]/40 blur-[100px]" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-[#4A7B9D]/10 blur-[100px]" />
+      </div>
 
       {/* Back to home */}
-      <button
-        onClick={() => navigate('/')}
-        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Home
-      </button>
+      <div className="absolute top-6 left-6 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 text-[#9AA899] hover:text-primary hover:bg-[#FFFFFF]/30 font-medium transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Button>
+      </div>
 
-      <div className="bg-card p-8 rounded-2xl shadow-card w-full max-w-md border border-border">
-
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-3">
-            <span className="text-primary-foreground font-bold text-lg">U</span>
+      <div className="bg-white p-10 rounded-[2rem] shadow-xl border border-[#FFFFFF]/50 w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500">
+        
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-6">
+            <Scissors className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Join USTRA PRO today</p>
+          <h1 className="text-3xl font-extrabold text-[#54577C] tracking-tight">Create Account</h1>
+          <p className="text-[#9AA899] font-medium mt-2">Join USTRA PRO today</p>
         </div>
 
         {/* Role Toggle */}
-        <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-xl">
+        <div className="grid grid-cols-2 gap-2 mb-8 p-1.5 bg-[#FFFFFF]/50 rounded-2xl border border-[#FFFFFF]">
           <button
             type="button"
             onClick={() => setRole('customer')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ${
+            className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
               role === 'customer'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-[#9AA899] hover:text-[#54577C]'
             }`}
           >
             <User className="w-4 h-4" />
@@ -92,33 +102,34 @@ export default function Signup() {
           <button
             type="button"
             onClick={() => setRole('owner')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-all ${
+            className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
               role === 'owner'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-[#9AA899] hover:text-[#54577C]'
             }`}
           >
             <Store className="w-4 h-4" />
-            Salon Owner
+            Partner
           </button>
         </div>
 
         {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-lg mb-4 text-sm">{error}</div>
+          <div className="bg-red-50 text-red-500 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 animate-in slide-in-from-top-2">
+            {error}
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Full Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-foreground">Full Name</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-bold text-[#54577C] ml-1">Full Name</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA899]" />
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full border border-border rounded-lg pl-10 pr-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
                 placeholder="John Doe"
                 required
               />
@@ -127,35 +138,34 @@ export default function Signup() {
 
           {/* Customer: Phone | Owner: Email */}
           {role === 'customer' ? (
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-foreground">Mobile Number</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-bold text-[#54577C] ml-1">Mobile Number</label>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">+91</span>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <Phone className="w-4 h-4 text-[#9AA899]" />
+                  <span className="text-sm font-bold text-[#9AA899]">+91</span>
                 </div>
                 <input
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                  className="w-full border border-border rounded-lg pl-16 pr-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  placeholder="98765 43210"
+                  className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl pl-20 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
+                  placeholder="9876543210"
                   required
                   maxLength={10}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">We'll use this to identify your account</p>
             </div>
           ) : (
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-foreground">Email Address</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-bold text-[#54577C] ml-1">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA899]" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full border border-border rounded-lg pl-10 pr-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
                   placeholder="you@example.com"
                   required
                 />
@@ -164,16 +174,16 @@ export default function Signup() {
           )}
 
           {/* Password */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-foreground">Password</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-bold text-[#54577C] ml-1">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA899]" />
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-border rounded-lg pl-10 pr-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                placeholder="Min 6 characters"
+                className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
+                placeholder="••••••••"
                 minLength={6}
                 required
               />
@@ -183,15 +193,15 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full gradient-primary text-primary-foreground py-3 rounded-xl font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity mt-2"
+            className="w-full gradient-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 mt-4"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-center text-sm mt-5 text-muted-foreground">
+        <p className="text-center text-sm font-medium text-[#54577C] mt-8">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-semibold hover:underline">Sign in</Link>
+          <Link to="/login" className="text-primary font-bold hover:underline">Sign In</Link>
         </p>
       </div>
     </div>

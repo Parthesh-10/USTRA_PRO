@@ -1,106 +1,94 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Star, MapPin, Scissors, Phone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from "@/data/types";
 
 const SalonCard = ({ salon }: { salon: Salon }) => {
+  const navigate = useNavigate();
   return (
-    <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group">
+    <div 
+      onClick={() => navigate(`/salon/${salon.id}`)}
+      className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer border border-[#FFFFFF]/30"
+    >
       <div className="relative overflow-hidden aspect-[16/10]">
         {/* Image or Placeholder */}
         {salon.image && !salon.image.includes("unsplash") ? (
           <img
             src={salon.image}
             alt={salon.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center gap-2">
-            <Scissors className="w-10 h-10 text-muted-foreground/30" />
-            <span className="text-xs text-muted-foreground">No photo yet</span>
+          <div className="w-full h-full bg-[#FFFFFF] flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center">
+              <Scissors className="w-6 h-6 text-primary/30" />
+            </div>
+            <span className="text-xs font-medium text-[#9AA899]">No photo available</span>
           </div>
         )}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-        {/* Salon name on image */}
-        <div className="absolute bottom-3 left-3 right-3">
-          <h3 className="font-bold text-white text-base drop-shadow-lg leading-tight">{salon.name}</h3>
-        </div>
+        {/* Subtle overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#FFFFFF]/20 to-transparent" />
 
         {/* Open Now badge */}
         {salon.openNow && (
-          <Badge className="absolute top-3 left-3 bg-salon-green text-salon-green-foreground border-0 text-xs">
-            Open Now
+          <Badge className="absolute top-3 left-3 bg-[#FFFFFF] text-[#54577C] border-0 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm">
+            OPEN
           </Badge>
         )}
 
         {/* Rush Hour badge */}
         {salon.rushHourEnabled && (
-          <div className="absolute top-3 left-3 mt-6">
-            <Badge className="bg-amber-500/90 text-white border-0 text-xs flex items-center gap-1">
-              <Zap className="w-3 h-3" /> Rush Hour
+          <div className="absolute top-3 right-3">
+            <Badge className="bg-[#4A7B9D] text-white border-0 text-[10px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-lg shadow-sm">
+              <Zap className="w-2.5 h-2.5" /> RUSH
             </Badge>
           </div>
         )}
-
-        {/* Rating */}
-        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1">
-          <Star className="w-3.5 h-3.5 fill-salon-gold text-salon-gold" />
-          <span className="text-xs font-semibold text-white">{salon.rating}</span>
-          <span className="text-xs text-white/70">({salon.reviewCount})</span>
-        </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-2">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">{salon.address}</span>
-          {salon.distance && (
-            <>
-              <span className="mx-1">•</span>
-              <span className="flex-shrink-0">{salon.distance}</span>
-            </>
-          )}
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-bold text-[#54577C] text-lg leading-tight group-hover:text-primary transition-colors">{salon.name}</h3>
+          {/* Rating */}
+          <div className="flex items-center gap-1 bg-primary/5 px-2 py-1 rounded-lg">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold text-[#54577C]">{salon.rating}</span>
+          </div>
         </div>
 
-        {/* Phone number */}
-        {salon.phone && (
-          <a
-            href={`tel:${salon.phone}`}
-            onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-primary text-xs mb-2 hover:underline w-fit"
-          >
-            <Phone className="w-3 h-3" />
-            {salon.phone}
-          </a>
-        )}
+        <div className="flex items-center gap-1.5 text-[#9AA899] text-sm mb-4">
+          <MapPin className="w-4 h-4 text-[#9AA899] flex-shrink-0" />
+          <span className="truncate">{salon.address}</span>
+        </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-3">
+        <div className="flex flex-wrap gap-2 mb-5">
           {salon.services.slice(0, 3).map((s) => (
-            <span key={s} className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-md">{s}</span>
+            <span key={s} className="text-[10px] font-bold uppercase tracking-wider bg-[#FFFFFF] text-[#9AA899] border border-[#FFFFFF] px-2 py-1 rounded-md">{s}</span>
           ))}
           {salon.services.length > 3 && (
-            <span className="text-xs text-muted-foreground">+{salon.services.length - 3}</span>
+            <span className="text-[10px] font-bold text-[#9AA899] mt-1">+{salon.services.length - 3} MORE</span>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">{salon.priceRange}</span>
-          <Link to={`/salon/${salon.id}`}>
-            <Button size="sm" className="gradient-primary text-primary-foreground border-0 hover:opacity-90">
-              Book Now
-            </Button>
-          </Link>
+        <div className="flex items-center justify-between pt-4 border-t border-[#FFFFFF]/30">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-[#9AA899] uppercase tracking-widest">Starting at</span>
+            <span className="text-lg font-extrabold text-[#54577C]">{salon.priceRange === "₹₹" ? "₹299" : salon.priceRange}</span>
+          </div>
+          <Button size="sm" className="gradient-primary text-white border-0 shadow-sm shadow-primary/20 rounded-xl px-5 py-5 group-hover:scale-105 transition-transform">
+            Book Now
+          </Button>
         </div>
       </div>
     </div>
   );
 };
+
+
 
 export default SalonCard;

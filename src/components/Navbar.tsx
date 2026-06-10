@@ -29,36 +29,36 @@ const Navbar = () => {
     : "/dashboard";
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-border/50">
+    <nav className="sticky top-0 z-50 bg-[#FFFFFF]/80 backdrop-blur-md border-b border-[#FFFFFF]/50 shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
-            <Scissors className="w-5 h-5 text-primary-foreground" />
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+            <Scissors className="w-5 h-5 text-white" />
           </div>
-          <span className="text-lg font-bold text-foreground hidden sm:block">
+          <span className="text-xl font-bold text-[#54577C] hidden sm:block tracking-tight">
             USTRA<span className="text-primary"> PRO</span>
           </span>
         </Link>
 
-        {/* Search bar */}
+        {/* Search bar removed per user request */}
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
           <div className="relative">
             <button
               onClick={() => setShowLocations(!showLocations)}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-[#9AA899] bg-white/50 border border-[#FFFFFF] rounded-xl px-4 py-2 hover:bg-[#FFFFFF]/30 transition-all"
             >
               <MapPin className="w-4 h-4 text-primary" />
               {location}
             </button>
             {showLocations && (
-              <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-48 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#FFFFFF] rounded-xl shadow-xl z-50 w-52 max-h-72 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-2">
                 {cities.map((city) => (
                   <button
                     key={city}
                     onClick={() => { setLocation(city); setShowLocations(false); }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${location === city ? "text-primary font-medium" : "text-foreground"}`}
+                    className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors ${location === city ? "bg-[#FFFFFF] text-[#54577C] font-semibold" : "text-[#54577C] hover:bg-[#FFFFFF]"}`}
                   >
                     {city}
                   </button>
@@ -66,20 +66,12 @@ const Navbar = () => {
               </div>
             )}
           </div>
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search salons, services..."
-              className="w-full pl-10 pr-4 py-2 text-sm bg-muted rounded-lg border-0 outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            />
-          </div>
         </div>
 
         {/* Right side — desktop */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           <Link to="/ai-assistant">
-            <Button variant="ghost" size="sm" className="text-muted-foreground">AI Stylist</Button>
+            <Button variant="ghost" size="sm" className="text-[#54577C] hover:text-primary hover:bg-[#FFFFFF]/20 font-medium">AI Stylist</Button>
           </Link>
 
           {user ? (
@@ -87,34 +79,34 @@ const Navbar = () => {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-3 px-2 py-1 rounded-full hover:bg-white/50 transition-all border border-transparent hover:border-[#FFFFFF]"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <User className="w-5 h-5 text-primary" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground leading-none">
+                <div className="text-left hidden lg:block">
+                  <p className="text-sm font-bold text-[#54577C] leading-none">
                     {user.name || "User"}
                   </p>
-                  <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                  <p className="text-[10px] text-[#9AA899] font-semibold uppercase tracking-wider mt-1">{user.role}</p>
                 </div>
               </button>
 
               {/* Dropdown menu */}
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-3 w-56 bg-white border border-[#FFFFFF] rounded-2xl shadow-xl z-50 overflow-hidden p-1 animate-in fade-in slide-in-from-top-2">
                   <Link
                     to={dashboardLink}
                     onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#54577C] hover:bg-[#FFFFFF] rounded-xl transition-colors"
                   >
-                    <LayoutDashboard className="w-4 h-4" />
+                    <LayoutDashboard className="w-4 h-4 text-[#9AA899]" />
                     {user.role === "owner" ? "Owner Dashboard" : "My Dashboard"}
                   </Link>
-                  <div className="border-t border-border" />
+                  <div className="my-1 border-t border-gray-50" />
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-destructive/5 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -124,12 +116,12 @@ const Navbar = () => {
             </div>
           ) : (
             // Not logged in
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Link to="/login">
-                <Button variant="ghost" size="sm">Login</Button>
+                <Button variant="ghost" size="sm" className="font-medium text-[#54577C]">Login</Button>
               </Link>
               <Link to="/signup">
-                <Button size="sm" className="gradient-primary text-primary-foreground border-0">
+                <Button size="sm" className="gradient-primary text-white border-0 shadow-sm shadow-primary/20 rounded-xl px-6">
                   Sign Up
                 </Button>
               </Link>
@@ -138,70 +130,63 @@ const Navbar = () => {
         </div>
 
         {/* Mobile menu toggle */}
-        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button className="md:hidden p-2 text-[#54577C]" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-card p-4 space-y-3 animate-fade-in">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search salons, services..."
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-muted rounded-lg outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-
-          <Link to="/ai-assistant" className="block py-2 text-sm text-foreground" onClick={() => setMobileOpen(false)}>
+        <div className="md:hidden border-t border-[#FFFFFF] bg-white p-4 space-y-4 animate-in fade-in slide-in-from-top-4">
+          <Link to="/ai-assistant" className="block px-4 py-3 text-sm font-medium text-[#54577C] hover:bg-[#FFFFFF] rounded-xl" onClick={() => setMobileOpen(false)}>
             AI Stylist
           </Link>
 
           {user ? (
             <>
               {/* User info */}
-              <div className="flex items-center gap-3 py-2 border-t border-border">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-3 px-4 py-3 bg-[#FFFFFF] rounded-xl">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <User className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{user.name || "User"}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                  <p className="text-sm font-bold text-[#54577C]">{user.name || "User"}</p>
+                  <p className="text-xs text-[#9AA899] font-semibold uppercase">{user.role}</p>
                 </div>
               </div>
 
               <Link
                 to={dashboardLink}
-                className="flex items-center gap-2 py-2 text-sm text-foreground"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#54577C] hover:bg-[#FFFFFF] rounded-xl"
                 onClick={() => setMobileOpen(false)}
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <LayoutDashboard className="w-4 h-4 text-[#9AA899]" />
                 {user.role === "owner" ? "Owner Dashboard" : "My Dashboard"}
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 py-2 text-sm text-destructive"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 rounded-xl"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
               </button>
             </>
           ) : (
-            <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            <div className="flex flex-col gap-3 pt-2">
               <Link to="/login" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" className="w-full">Login</Button>
+                <Button variant="outline" className="w-full rounded-xl font-medium border-[#FFFFFF]">Login</Button>
               </Link>
               <Link to="/signup" onClick={() => setMobileOpen(false)}>
-                <Button className="w-full gradient-primary text-primary-foreground border-0">Sign Up</Button>
+                <Button className="w-full gradient-primary text-white border-0 rounded-xl font-medium shadow-sm shadow-primary/20">Sign Up</Button>
               </Link>
             </div>
           )}
         </div>
       )}
     </nav>
+
+
   );
 };
 

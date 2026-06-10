@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Scissors, Phone, Zap } from "lucide-react";
+import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Scissors, Phone, Zap, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ const SalonDetails = () => {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [showBarberModal, setShowBarberModal] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -148,17 +149,31 @@ const SalonDetails = () => {
           ) : (
             <div className="grid gap-2">
               {services.map((s) => (
-                <div key={s.id} className="flex items-center justify-between bg-card rounded-lg p-4 shadow-card">
-                  <div>
-                    <p className="font-medium text-foreground text-sm">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.duration} mins</p>
-                  </div>
+                <div 
+                  key={s.id} 
+                  className={`flex items-center justify-between bg-card rounded-lg p-4 shadow-card cursor-pointer border-2 transition-colors ${
+                    selectedServices.includes(s.id) ? "border-primary bg-primary/5" : "border-transparent hover:border-border"
+                  }`}
+                  onClick={() => {
+                    setSelectedServices(prev => 
+                      prev.includes(s.id) 
+                        ? prev.filter(id => id !== s.id) 
+                        : [...prev, s.id]
+                    )
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-foreground">₹{s.price}</span>
-                    <Link to={`/booking?salon=${salon.id}&service=${s.id}`}>
-                      <Button size="sm" variant="outline" className="text-xs">Book</Button>
-                    </Link>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
+                      selectedServices.includes(s.id) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"
+                    }`}>
+                      {selectedServices.includes(s.id) && <Check className="w-3 h-3" />}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground text-sm">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">{s.duration} mins</p>
+                    </div>
                   </div>
+                  <span className="font-semibold text-foreground">₹{s.price}</span>
                 </div>
               ))}
             </div>
@@ -221,7 +236,7 @@ const SalonDetails = () => {
 
         {/* CTA */}
         <div className="sticky bottom-4">
-          <Link to={`/booking?salon=${salon.id}${selectedBarber ? `&barber=${selectedBarber}` : ""}`}>
+          <Link to={`/booking?salon=${salon.id}${selectedBarber ? `&barber=${selectedBarber}` : ""}${selectedServices.length > 0 ? `&service=${selectedServices.join(",")}` : ""}`}>
             <Button className="w-full gradient-primary text-primary-foreground border-0 py-6 text-base font-semibold shadow-lg">
               Book Appointment <ChevronRight className="w-5 h-5 ml-1" />
             </Button>

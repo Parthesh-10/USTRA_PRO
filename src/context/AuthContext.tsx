@@ -48,13 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data)
     setLoading(false)
   }
-
   async function signUp(email: string, password: string, name: string, role = 'customer', phone?: string) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name, role, phone: phone || '' } }
     })
+    
     // If signup succeeded and phone provided, update users table with phone
     if (!error && phone) {
       // Small delay for trigger to create user row

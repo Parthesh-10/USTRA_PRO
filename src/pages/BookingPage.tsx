@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const steps = ["Service", "Barber", "Date & Time"];
 
@@ -31,7 +32,7 @@ const BookingPage = () => {
 
   const [step, setStep] = useState(0);
   const [selectedServices, setSelectedServices] = useState<string[]>(
-    preSelectedService ? [preSelectedService] : []
+    preSelectedService ? preSelectedService.split(",") : []
   );
   const [selectedBarber, setSelectedBarber] = useState<string | null>(preSelectedBarber || null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -143,8 +144,7 @@ const BookingPage = () => {
         service_id: serviceId,
         booking_date: dateStr,
         booking_time: timeStr,
-        status: "pending",
-        payment_status: "pending",
+        status: "pending_approval",
         total_amount: totalAmount,
         is_rush_hour: isRushHour,
         rush_fee: rushFee,
@@ -160,7 +160,8 @@ const BookingPage = () => {
       }
       setBooking(false);
     } else {
-      navigate(`/payment?booking=${data.id}&total=${totalAmount}`);
+      toast.success("Booking requested! Waiting for salon approval.");
+      navigate("/dashboard");
     }
   }
 

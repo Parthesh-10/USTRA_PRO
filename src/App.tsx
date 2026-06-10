@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import SalonDetails from "./pages/SalonDetails";
 import BookingPage from "./pages/BookingPage";
-import PaymentPage from "./pages/PaymentPage";
+
 import AIAssistant from "./pages/AIAssistant";
 import UserDashboard from "./pages/UserDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
@@ -19,8 +19,10 @@ import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+
+  return (
+    <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
@@ -39,11 +41,7 @@ const App = () => (
                 <BookingPage />
               </ProtectedRoute>
             } />
-            <Route path="/payment" element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <PaymentPage />
-              </ProtectedRoute>
-            } />
+
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={['customer']}>
                 <UserDashboard />
@@ -75,6 +73,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

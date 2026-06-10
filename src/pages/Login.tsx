@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function Login() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,7 +16,7 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await signIn(email, password)
+    const { error } = await signIn(identifier, password)
     if (error) {
       setError(error.message)
       setLoading(false)
@@ -25,41 +26,64 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF]/50 relative overflow-hidden">
       
-      {/* Back to home */}
-      <button
-        onClick={() => navigate('/')}
-        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Home
-      </button>
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#FFFFFF]/40 blur-[100px]" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-[#4A7B9D]/10 blur-[100px]" />
+      </div>
 
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Welcome Back</h1>
+      {/* Back to home */}
+      <div className="absolute top-6 left-6 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 text-[#9AA899] hover:text-primary hover:bg-[#FFFFFF]/30 font-medium transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Button>
+      </div>
+
+      <div className="bg-white p-10 rounded-[2rem] shadow-xl border border-[#FFFFFF]/50 w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500">
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-6">
+            <Scissors className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-[#54577C] tracking-tight">Welcome Back</h1>
+          <p className="text-[#9AA899] font-medium mt-2">Sign in to your USTRA PRO account</p>
+        </div>
+
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>
+          <div className="bg-red-50 text-red-500 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 animate-in slide-in-from-top-2">
+            {error}
+          </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-bold text-[#54577C] ml-1">Mobile or Email</label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="you@example.com"
+              type="text"
+              value={identifier}
+              onChange={e => setIdentifier(e.target.value)}
+              className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
+              placeholder="10-digit mobile or email"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center ml-1">
+              <label className="block text-sm font-bold text-[#54577C]">Password</label>
+              <button type="button" className="text-xs font-bold text-primary hover:underline">Forgot?</button>
+            </div>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-[#FFFFFF]/30 border border-[#FFFFFF] rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-[#54577C] font-medium placeholder:text-[#9AA899]"
               placeholder="••••••••"
               required
             />
@@ -67,14 +91,24 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50"
+            className="w-full gradient-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <p className="text-center text-sm mt-4 text-gray-600">
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#FFFFFF]"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-4 text-[#9AA899] font-bold tracking-widest">New to USTRA?</span>
+          </div>
+        </div>
+
+        <p className="text-center text-sm font-medium text-[#54577C]">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-primary font-medium hover:underline">Sign up</Link>
+          <Link to="/signup" className="text-primary font-bold hover:underline">Create Account</Link>
         </p>
       </div>
     </div>
