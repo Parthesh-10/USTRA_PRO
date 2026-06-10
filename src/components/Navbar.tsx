@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, User, Menu, X, Slice, LogOut, LayoutDashboard } from "lucide-react";
+import { MapPin, User, Menu, X, Slice, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -21,7 +21,6 @@ const Navbar = () => {
     setMobileOpen(false);
   }
 
-  // Dashboard link based on role
   const dashboardLink = user?.role === "owner"
     ? "/owner-dashboard"
     : user?.role === "admin"
@@ -42,7 +41,7 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Search bar removed per user request */}
+        {/* Location picker — desktop */}
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
           <div className="relative">
             <button
@@ -69,8 +68,8 @@ const Navbar = () => {
         </div>
 
         {/* Right side — desktop */}
+        <div className="hidden md:flex items-center gap-4">
           {user ? (
-            // Logged in
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -87,7 +86,6 @@ const Navbar = () => {
                 </div>
               </button>
 
-              {/* Dropdown menu */}
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-white border border-[#FFFFFF] rounded-2xl shadow-xl z-50 overflow-hidden p-1 animate-in fade-in slide-in-from-top-2">
                   <Link
@@ -110,7 +108,6 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            // Not logged in
             <div className="flex items-center gap-3">
               <Link to="/login">
                 <Button variant="ghost" size="sm" className="font-medium text-[#54577C]">Login</Button>
@@ -133,10 +130,8 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-[#FFFFFF] bg-white p-4 space-y-4 animate-in fade-in slide-in-from-top-4">
-
           {user ? (
             <>
-              {/* User info */}
               <div className="flex items-center gap-3 px-4 py-3 bg-[#FFFFFF] rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                   <User className="w-6 h-6 text-primary" />
@@ -177,8 +172,6 @@ const Navbar = () => {
         </div>
       )}
     </nav>
-
-
   );
 };
 
