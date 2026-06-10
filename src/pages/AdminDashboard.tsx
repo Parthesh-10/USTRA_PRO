@@ -417,7 +417,7 @@ const AdminDashboard = () => {
                         <p className="text-xs text-muted-foreground">
                           {b.services?.name} • {b.barbers?.name} • {b.booking_date} at {b.booking_time?.slice(0, 5)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Payment: {b.payment_status}</p>
+
                       </div>
                       <div className="text-right space-y-1">
                         <p className="font-semibold text-foreground">₹{b.total_amount}</p>

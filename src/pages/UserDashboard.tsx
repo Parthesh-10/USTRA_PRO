@@ -49,7 +49,7 @@ const UserDashboard = () => {
     navigate("/login");
   }
 
-  const upcoming = bookings.filter((b) => b.status === "pending" || b.status === "confirmed");
+  const upcoming = bookings.filter((b) => ["pending_approval", "confirmed"].includes(b.status));
   const past = bookings.filter((b) => b.status === "completed" || b.status === "cancelled");
 
   return (
@@ -112,8 +112,12 @@ const UserDashboard = () => {
                       <h3 className="font-semibold text-foreground">{b.salons?.name}</h3>
                       <p className="text-sm text-muted-foreground">{b.services?.name}</p>
                     </div>
-                    <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded-lg font-medium capitalize">
-                      {b.status}
+                    <span className={`text-xs px-2 py-1 rounded-lg font-medium ${
+                      b.status === "pending_approval" ? "bg-amber-500/10 text-amber-500" :
+                      "bg-green-500/10 text-green-500"
+                    }`}>
+                      {b.status === "pending_approval" ? "Pending Approval" : 
+                       b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                     </span>
                   </div>
                   <div className="flex gap-4 text-sm text-muted-foreground">
@@ -129,14 +133,16 @@ const UserDashboard = () => {
                   </div>
                   <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                     <span className="font-semibold text-foreground">₹{b.total_amount}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCancel(b.id)}
-                      className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                    >
-                      Cancel
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancel(b.id)}
+                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))

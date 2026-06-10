@@ -271,7 +271,7 @@ const OwnerDashboard = () => {
     const today = new Date().toISOString().split("T")[0];
     return b.booking_date === today && b.status === "completed";
   }).reduce((sum, b) => sum + (b.total_amount || 0), 0);
-  const pendingBookings = bookings.filter(b => b.status === "pending").length;
+  const pendingBookings = bookings.filter(b => b.status === "pending_approval").length;
   const completedBookings = bookings.filter(b => b.status === "completed").length;
 
   if (loading) return (
@@ -483,22 +483,25 @@ const OwnerDashboard = () => {
                             <p className="text-xs text-amber-500">+₹{b.rush_fee} rush</p>
                           )}
                           <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                            b.status === "pending" ? "bg-amber-500/10 text-amber-500" :
-                            b.status === "confirmed" ? "bg-blue-500/10 text-blue-500" :
-                            b.status === "completed" ? "bg-green-500/10 text-green-500" :
+                            b.status === "pending_approval" ? "bg-amber-500/10 text-amber-500" :
+                            b.status === "confirmed" ? "bg-green-500/10 text-green-500" :
+                            b.status === "completed" ? "bg-green-600/10 text-green-600" :
                             "bg-destructive/10 text-destructive"
-                          }`}>{b.status}</span>
+                          }`}>
+                            {b.status === "pending_approval" ? "Pending Approval" : 
+                             b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                          </span>
                         </div>
                       </div>
-                      {b.status === "pending" && (
+                      {b.status === "pending_approval" && (
                         <div className="flex gap-2 mt-3">
                           <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
                             onClick={() => handleUpdateBookingStatus(b.id, "confirmed")}>
-                            <Check className="w-3 h-3 mr-1" /> Confirm
+                            <Check className="w-3 h-3 mr-1" /> Accept
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 text-destructive border-destructive/30 text-xs"
-                            onClick={() => handleUpdateBookingStatus(b.id, "cancelled")}>
-                            <X className="w-3 h-3 mr-1" /> Cancel
+                            onClick={() => handleUpdateBookingStatus(b.id, "rejected")}>
+                            <X className="w-3 h-3 mr-1" /> Reject
                           </Button>
                         </div>
                       )}
