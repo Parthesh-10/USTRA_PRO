@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import SalonDetails from "./pages/SalonDetails";
 import BookingPage from "./pages/BookingPage";
 
-import AIAssistant from "./pages/AIAssistant";
 import UserDashboard from "./pages/UserDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -47,11 +46,7 @@ const App = () => {
                 <UserDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/ai-assistant" element={
-              <ProtectedRoute allowedRoles={['customer', 'owner', 'admin']}>
-                <AIAssistant />
-              </ProtectedRoute>
-            } />
+
 
             {/* Owner only */}
             <Route path="/owner-dashboard" element={

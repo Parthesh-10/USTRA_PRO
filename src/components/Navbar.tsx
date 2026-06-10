@@ -69,11 +69,6 @@ const Navbar = () => {
         </div>
 
         {/* Right side — desktop */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link to="/ai-assistant">
-            <Button variant="ghost" size="sm" className="text-[#54577C] hover:text-primary hover:bg-[#FFFFFF]/20 font-medium">AI Stylist</Button>
-          </Link>
-
           {user ? (
             // Logged in
             <div className="relative">
@@ -138,9 +133,6 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-[#FFFFFF] bg-white p-4 space-y-4 animate-in fade-in slide-in-from-top-4">
-          <Link to="/ai-assistant" className="block px-4 py-3 text-sm font-medium text-[#54577C] hover:bg-[#FFFFFF] rounded-xl" onClick={() => setMobileOpen(false)}>
-            AI Stylist
-          </Link>
 
           {user ? (
             <>
