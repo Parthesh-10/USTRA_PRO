@@ -9,7 +9,6 @@ import { Slice, TrendingUp, Clock, Shield, Search } from "lucide-react";
 const features = [
   { icon: Slice, title: "Expert Stylists", desc: "Verified professionals" },
   { icon: Clock, title: "Instant Booking", desc: "Book in 30 seconds" },
-
   { icon: Shield, title: "Trusted Reviews", desc: "Real customer ratings" },
 ];
 
