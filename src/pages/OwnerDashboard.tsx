@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Scissors, X, Check, Camera, Phone, Zap, Settings } from "lucide-react";
+import { Users, CalendarDays, BarChart3, Plus, TrendingUp, DollarSign, Slice, X, Check, Camera, Phone, Zap, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 const navItems = [
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "barbers", label: "Barbers", icon: Users },
-  { id: "services", label: "Services", icon: Scissors },
+  { id: "services", label: "Services", icon: Slice },
   { id: "settings", label: "Settings", icon: Settings },
   { id: "earnings", label: "Earnings", icon: BarChart3 },
 ];
@@ -287,7 +287,7 @@ const OwnerDashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex flex-col items-center justify-center h-96 gap-4 px-4">
-        <Scissors className="w-16 h-16 text-muted-foreground/30" />
+        <Slice className="w-16 h-16 text-muted-foreground/30" />
         <h2 className="text-xl font-bold text-foreground">No Salon Yet</h2>
         <p className="text-muted-foreground text-sm text-center">Create your salon to start accepting bookings</p>
         <Button className="gradient-primary text-primary-foreground border-0" onClick={() => setShowAddSalon(true)}>
@@ -372,7 +372,7 @@ const OwnerDashboard = () => {
                 <img src={salon.image_url} alt={salon.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                  <Scissors className="w-8 h-8 text-muted-foreground/30" />
+                  <Slice className="w-8 h-8 text-muted-foreground/30" />
                   <span className="text-xs text-muted-foreground">No photo yet</span>
                 </div>
               )}
@@ -578,7 +578,7 @@ const OwnerDashboard = () => {
               </div>
               {services.length === 0 ? (
                 <div className="text-center py-12">
-                  <Scissors className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <Slice className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-muted-foreground text-sm">No services yet. Add your first service!</p>
                 </div>
               ) : (

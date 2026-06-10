@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, User, Menu, X, Scissors, LogOut, LayoutDashboard } from "lucide-react";
+import { Search, MapPin, User, Menu, X, Slice, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -35,7 +35,7 @@ const Navbar = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-            <Scissors className="w-5 h-5 text-white" />
+            <Slice className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-[#54577C] hidden sm:block tracking-tight">
             USTRA<span className="text-primary"> PRO</span>

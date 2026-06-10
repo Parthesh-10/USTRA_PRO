@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Star, MapPin, Scissors, Phone, Zap } from "lucide-react";
+import { Star, MapPin, Slice, Phone, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Salon } from "@/data/types";
@@ -25,7 +25,7 @@ const SalonCard = ({ salon }: { salon: Salon }) => {
         ) : (
           <div className="w-full h-full bg-[#FFFFFF] flex flex-col items-center justify-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center">
-              <Scissors className="w-6 h-6 text-primary/30" />
+              <Slice className="w-6 h-6 text-primary/30" />
             </div>
             <span className="text-xs font-medium text-[#9AA899]">No photo available</span>
           </div>

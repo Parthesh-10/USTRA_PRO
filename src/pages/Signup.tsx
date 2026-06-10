@@ -79,7 +79,7 @@ export default function Signup() {
         
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-6">
-            <Scissors className="w-8 h-8 text-white" />
+            <Slice className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold text-[#54577C] tracking-tight">Create Account</h1>
           <p className="text-[#9AA899] font-medium mt-2">Join USTRA PRO today</p>

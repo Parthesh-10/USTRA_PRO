@@ -50,7 +50,7 @@ export default function Login() {
       <div className="bg-white p-10 rounded-[2rem] shadow-xl border border-[#FFFFFF]/50 w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500">
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto mb-6">
-            <Scissors className="w-8 h-8 text-white" />
+            <Slice className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold text-[#54577C] tracking-tight">Welcome Back</h1>
           <p className="text-[#9AA899] font-medium mt-2">Sign in to your USTRA PRO account</p>

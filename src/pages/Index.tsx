@@ -4,10 +4,10 @@ import Navbar from "@/components/Navbar";
 import SalonCard from "@/components/SalonCard";
 import FilterBar from "@/components/FilterBar";
 import { supabase } from "@/lib/supabase";
-import { Scissors, TrendingUp, Clock, Shield, Search } from "lucide-react";
+import { Slice, TrendingUp, Clock, Shield, Search } from "lucide-react";
 
 const features = [
-  { icon: Scissors, title: "Expert Stylists", desc: "Verified professionals" },
+  { icon: Slice, title: "Expert Stylists", desc: "Verified professionals" },
   { icon: Clock, title: "Instant Booking", desc: "Book in 30 seconds" },
   { icon: TrendingUp, title: "AI Suggestions", desc: "Personalized styles" },
   { icon: Shield, title: "Trusted Reviews", desc: "Real customer ratings" },
@@ -218,7 +218,7 @@ const Index = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-24 bg-white/50 rounded-3xl border border-dashed border-[#FFFFFF]">
             <div className="w-20 h-20 rounded-full bg-[#FFFFFF] flex items-center justify-center mx-auto mb-6">
-              <Scissors className="w-10 h-10 text-[#9AA899]" />
+              <Slice className="w-10 h-10 text-[#9AA899]" />
             </div>
             <h3 className="text-xl font-bold text-[#54577C] mb-2">No results found</h3>
             <p className="text-[#9AA899] max-w-sm mx-auto mb-8 font-medium">

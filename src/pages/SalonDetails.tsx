@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Scissors, Phone, Zap, Check } from "lucide-react";
+import { Star, MapPin, Clock, ArrowLeft, ChevronRight, Slice, Phone, Zap, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
@@ -74,7 +74,7 @@ const SalonDetails = () => {
           <img src={salon.image_url} alt={salon.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-primary/10">
-            <Scissors className="w-16 h-16 text-primary/30" />
+            <Slice className="w-16 h-16 text-primary/30" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
@@ -200,7 +200,7 @@ const SalonDetails = () => {
                       <img src={b.barber_images[0].image_url} alt={b.name} className="w-12 h-12 rounded-full object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Scissors className="w-5 h-5 text-primary" />
+                        <Slice className="w-5 h-5 text-primary" />
                       </div>
                     )}
                     <div>
@@ -259,7 +259,7 @@ const SalonDetails = () => {
                 <img src={showBarberModal.barber_images[0].image_url} alt={showBarberModal.name} className="w-20 h-20 rounded-xl object-cover" />
               ) : (
                 <div className="w-20 h-20 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Scissors className="w-8 h-8 text-primary" />
+                  <Slice className="w-8 h-8 text-primary" />
                 </div>
               )}
               <div>
