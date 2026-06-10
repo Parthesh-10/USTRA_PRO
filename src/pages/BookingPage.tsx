@@ -144,7 +144,7 @@ const BookingPage = () => {
         service_id: serviceId,
         booking_date: dateStr,
         booking_time: timeStr,
-        status: "pending_approval",
+        status: "pending",        // ✅ change this
         payment_status: "pending",
         total_amount: totalAmount,
         is_rush_hour: isRushHour,
