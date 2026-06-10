@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, Clock, Heart, User, Star, ChevronRight, LogOut } from "lucide-react";
+import { Calendar, Clock, User, ChevronRight, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
-const tabs = ["Upcoming", "Past", "Saved", "Profile"];
+const tabs = ["Upcoming", "Past"];
 
 const UserDashboard = () => {
   const { user, signOut } = useAuth();
@@ -58,7 +58,7 @@ const UserDashboard = () => {
       <div className="container mx-auto px-4 py-6 max-w-3xl">
 
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-foreground">My Dashboard</h1>
+          <h1 className="text-xl font-bold text-foreground">My Bookings</h1>
           <Button
             variant="outline"
             size="sm"
@@ -194,58 +194,7 @@ const UserDashboard = () => {
           </div>
         )}
 
-        {/* Saved - keeping UI, will connect later */}
-        {activeTab === "Saved" && (
-          <div className="text-center py-12 animate-fade-in">
-            <Heart className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">No saved salons yet</p>
-            <Link to="/">
-              <Button className="mt-3 gradient-primary text-primary-foreground border-0" size="sm">
-                Explore Salons
-              </Button>
-            </Link>
-          </div>
-        )}
 
-        {/* Profile - real user data */}
-        {activeTab === "Profile" && (
-          <div className="bg-card rounded-xl p-6 shadow-card animate-fade-in">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center">
-                <User className="w-8 h-8 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground text-lg">{user?.name || "User"}</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-                <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded-lg font-medium capitalize mt-1 inline-block">
-                  {user?.role}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: "Phone", value: user?.phone || "Not set" },
-                { label: "Role", value: user?.role || "customer" },
-                { label: "Total bookings", value: bookings.length.toString() },
-                { label: "Upcoming", value: upcoming.length.toString() },
-                { label: "Completed", value: bookings.filter(b => b.status === "completed").length.toString() },
-              ].map((item) => (
-                <div key={item.label} className="flex justify-between py-2 border-b border-border last:border-0">
-                  <span className="text-sm text-muted-foreground">{item.label}</span>
-                  <span className="text-sm font-medium text-foreground capitalize">{item.value}</span>
-                </div>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              className="w-full mt-6 text-destructive border-destructive/30 hover:bg-destructive/5"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
