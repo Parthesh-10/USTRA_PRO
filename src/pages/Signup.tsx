@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { ArrowLeft, User, Phone, Lock, Mail, Store } from 'lucide-react'
+import { ArrowLeft, User, Phone, Lock, Mail, Store, Slice } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function Signup() {
