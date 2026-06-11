@@ -500,7 +500,7 @@ const OwnerDashboard = () => {
                             <Check className="w-3 h-3 mr-1" /> Accept
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 text-destructive border-destructive/30 text-xs"
-                            onClick={() => handleUpdateBookingStatus(b.id, "rejected")}>
+                            onClick={() => handleUpdateBookingStatus(b.id, "cancelled")}>
                             <X className="w-3 h-3 mr-1" /> Reject
                           </Button>
                         </div>
