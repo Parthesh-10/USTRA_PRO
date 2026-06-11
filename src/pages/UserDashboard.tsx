@@ -49,7 +49,7 @@ const UserDashboard = () => {
     navigate("/login");
   }
 
-  const upcoming = bookings.filter((b) => ["pending_approval", "confirmed"].includes(b.status));
+  const upcoming = bookings.filter((b) => ["pending_approval", "pending", "confirmed"].includes(b.status));
   const past = bookings.filter((b) => b.status === "completed" || b.status === "cancelled");
 
   return (
@@ -113,10 +113,10 @@ const UserDashboard = () => {
                       <p className="text-sm text-muted-foreground">{b.services?.name}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-lg font-medium ${
-                      b.status === "pending_approval" ? "bg-amber-500/10 text-amber-500" :
+                      (b.status === "pending_approval" || b.status === "pending") ? "bg-amber-500/10 text-amber-500" :
                       "bg-green-500/10 text-green-500"
                     }`}>
-                      {b.status === "pending_approval" ? "Pending Approval" : 
+                      {(b.status === "pending_approval" || b.status === "pending") ? "Pending Approval" : 
                        b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                     </span>
                   </div>

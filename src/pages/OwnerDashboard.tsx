@@ -271,7 +271,7 @@ const OwnerDashboard = () => {
     const today = new Date().toISOString().split("T")[0];
     return b.booking_date === today && b.status === "completed";
   }).reduce((sum, b) => sum + (b.total_amount || 0), 0);
-  const pendingBookings = bookings.filter(b => b.status === "pending_approval").length;
+  const pendingBookings = bookings.filter(b => b.status === "pending_approval" || b.status === "pending").length;
   const completedBookings = bookings.filter(b => b.status === "completed").length;
 
   if (loading) return (
@@ -483,17 +483,17 @@ const OwnerDashboard = () => {
                             <p className="text-xs text-amber-500">+₹{b.rush_fee} rush</p>
                           )}
                           <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                            b.status === "pending_approval" ? "bg-amber-500/10 text-amber-500" :
+                            (b.status === "pending_approval" || b.status === "pending") ? "bg-amber-500/10 text-amber-500" :
                             b.status === "confirmed" ? "bg-green-500/10 text-green-500" :
                             b.status === "completed" ? "bg-green-600/10 text-green-600" :
                             "bg-destructive/10 text-destructive"
                           }`}>
-                            {b.status === "pending_approval" ? "Pending Approval" : 
+                            {(b.status === "pending_approval" || b.status === "pending") ? "Pending Approval" : 
                              b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                           </span>
                         </div>
                       </div>
-                      {b.status === "pending_approval" && (
+                      {(b.status === "pending_approval" || b.status === "pending") && (
                         <div className="flex gap-2 mt-3">
                           <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600 text-white border-0 text-xs"
                             onClick={() => handleUpdateBookingStatus(b.id, "confirmed")}>

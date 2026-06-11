@@ -271,11 +271,11 @@ const AdminDashboard = () => {
                     <div className="text-right">
                       <p className="text-sm font-semibold text-foreground">₹{b.total_amount}</p>
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                        b.status === "pending_approval" ? "bg-amber-500/10 text-amber-500" :
+                        (b.status === "pending_approval" || b.status === "pending") ? "bg-amber-500/10 text-amber-500" :
                         b.status === "confirmed" ? "bg-blue-500/10 text-blue-500" :
                         b.status === "completed" ? "bg-green-500/10 text-green-500" :
                         "bg-destructive/10 text-destructive"
-                      }`}>{b.status === "pending_approval" ? "Pending" : b.status.charAt(0).toUpperCase() + b.status.slice(1)}</span>
+                      }`}>{(b.status === "pending_approval" || b.status === "pending") ? "Pending" : b.status.charAt(0).toUpperCase() + b.status.slice(1)}</span>
                     </div>
                   </div>
                 ))}
@@ -399,7 +399,7 @@ const AdminDashboard = () => {
               <div className="grid sm:grid-cols-3 gap-4 mb-6">
                 {[
                   { label: "Completed", value: completedBookings, color: "text-green-500" },
-                  { label: "Pending", value: bookings.filter(b => b.status === "pending_approval").length, color: "text-amber-500" },
+                  { label: "Pending", value: bookings.filter(b => b.status === "pending_approval" || b.status === "pending").length, color: "text-amber-500" },
                   { label: "Cancelled", value: bookings.filter(b => b.status === "cancelled").length, color: "text-destructive" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card rounded-xl p-4 shadow-card text-center">
@@ -425,7 +425,7 @@ const AdminDashboard = () => {
                           value={b.status}
                           onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value)}
                           className={`text-xs border rounded px-2 py-1 bg-background focus:outline-none ${
-                            b.status === "pending_approval" ? "text-amber-500" :
+                            (b.status === "pending_approval" || b.status === "pending") ? "text-amber-500" :
                             b.status === "confirmed" ? "text-blue-500" :
                             b.status === "completed" ? "text-green-500" :
                             "text-destructive"
