@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ArrowLeft, Slice } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -21,7 +22,25 @@ export default function Login() {
       setError(error.message)
       setLoading(false)
     } else {
-      navigate('/')
+      // Get the logged-in user's role to redirect appropriately
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        if (userData?.role === 'owner') {
+          navigate('/owner-dashboard')
+        } else if (userData?.role === 'admin') {
+          navigate('/admin')
+        } else {
+          navigate('/')
+        }
+      } else {
+        navigate('/')
+      }
     }
   }
 

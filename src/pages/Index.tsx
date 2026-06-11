@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import SalonCard from "@/components/SalonCard";
 import FilterBar from "@/components/FilterBar";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 import { Slice, TrendingUp, Clock, Shield, Search } from "lucide-react";
 
 const features = [
@@ -20,8 +21,15 @@ const heroImages = [
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [salons, setSalons] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
+
+  // Redirect owners and admins to their dashboards
+  useEffect(() => {
+    if (user?.role === "owner") navigate("/owner-dashboard", { replace: true });
+    if (user?.role === "admin") navigate("/admin", { replace: true });
+  }, [user, navigate]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
